@@ -1,0 +1,25 @@
+{{define "page-status"}}
+    {{- /*gotype: smart-docs/core/models.PageView*/ -}}
+    <div>
+        <button hx-patch="/document/{{.DocumentId}}/{{.PageNum}}/status/PREDICTION"
+                hx-target="closest div"
+                class="{{if eq .Status "PREDICTION"}}active{{end}}"
+        >
+            Predicted
+        </button>
+        <button hx-patch="/document/{{.DocumentId}}/{{.PageNum}}/status/TRAINING"
+                hx-target="closest div"
+                class="{{if eq .Status "TRAINING"}}active{{end}}"
+        >
+            Training
+        </button>
+        <button hx-patch="/document/{{.DocumentId}}/{{.PageNum}}/status/VALIDATION"
+                hx-target="closest div"
+                class="{{if eq .Status "VALIDATION"}}active{{end}}"
+        >
+            Validation
+        </button>
+    </div>
+{{end}}
+
+{{template "page-status" . }}

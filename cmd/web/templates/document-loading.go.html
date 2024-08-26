@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head"}}
+<body>
+{{- /*gotype: smart-docs/core/models.PendingDocument*/ -}}
+<div hx-get="/document/{{.Id}}" hx-trigger="every 3s" hx-swap="outerHTML">
+    <nav>
+
+        <a href="/">Documents</a>
+        /
+        <a href="/document/{{.Id}}" class="active">{{.Name}}</a>
+    </nav>
+    <div>Loading. Please wait...</div>
+</div>
+</body>
+</html>

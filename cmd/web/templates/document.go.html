@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head"}}
+<body>
+{{- /*gotype: smart-docs/core/models.PageView*/ -}}
+<nav>
+
+    <a href="/">Documents</a>
+    /
+    <a href="/document/{{.Id}}" class="active">{{.DocumentName}}</a>
+
+    <div style="flex-grow: 1"></div>
+
+    <div>
+        {{if .HasPreviousPage}}
+            <a href="/document/{{.DocumentId}}?page={{.PreviousPage}}"> < </a>
+        {{else}}
+            <a disabled> < </a>
+        {{end}}
+        {{if .HasNextPage}}
+            <a href="/document/{{.DocumentId}}?page={{.NextPage}}"> > </a>
+        {{else}}
+            <a disabled> > </a>
+        {{end}}
+    </div>
+
+    {{template "page-status" . }}
+</nav>
+
+<section>
+    {{ template "page" . }}
+</section>
+
+{{ define "page" }}
+    <img src="/assets/images/{{.DocumentId}}/{{.PageNum}}.jpg"  alt="Preview of page {{.PageNum}}" />
+    <pre>
+        {{.Html}}
+    </pre>
+{{ end }}
+</body>
+</html>

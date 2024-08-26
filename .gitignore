@@ -1,0 +1,8 @@
+/tmp/
+/data/
+/components/annotation-tool/.angular
+/components/annotation-tool/node_modules
+/.idea/
+/cmd/web/assets/annotator/browser/
+/cmd/web/assets/images/
+/cmd/web/assets/annotator/

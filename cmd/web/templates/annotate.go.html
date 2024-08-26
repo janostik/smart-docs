@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+{{template "head"}}
+<body>
+{{- /*gotype: smart-docs/core/models.PageView*/ -}}
+<script src="/assets/annotator/browser/main.js" type="module"></script>
+<link href="/assets/annotator/browser/styles.css" rel="stylesheet" >
+<nav>
+    <a href="/">Documents</a>
+    <a href="/annotate" class="active">Annotate Docs</a>
+    <a href="/annotate-tables">Annotate Tables</a>
+    <div style="flex-grow: 1"></div>
+
+    {{template "page-status" . }}
+</nav>
+<app-annotation-tool
+        type="DOCUMENT"
+        document-id="{{.DocumentId}}"
+        page-number="{{.PageNum}}"
+></app-annotation-tool>
+</body>
+</html>
