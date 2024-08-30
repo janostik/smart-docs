@@ -46,7 +46,7 @@ import {Annotation} from "./app-annotation-tool.component";
 
         rect.minimal {
             stroke-width: 0;
-            fill-opacity: 0.6;
+            fill-opacity: 0.4;
         }
         
         rect.minimal:hover {

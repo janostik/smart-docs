@@ -291,9 +291,7 @@ export class AppAnnotationToolComponent implements OnInit {
                 }
             }
         }
-        this.activeTool = undefined
         this._syncAnnotations()
-        this._cd.markForCheck();
     };
 
     splitCells = (event:MouseEvent) => {
@@ -343,7 +341,6 @@ export class AppAnnotationToolComponent implements OnInit {
         }
 
         this._syncAnnotations()
-        this._cd.markForCheck();
     };
 
     drawLineToolMove = (event:MouseEvent) => {
@@ -369,10 +366,8 @@ export class AppAnnotationToolComponent implements OnInit {
                 break
         }
         this._line?.setAttribute("stroke-width", "1")
+        this._line?.setAttribute("stroke-dasharray", "0 4 0")
         this._line?.setAttribute("stroke", "black")
-
-        // <line x1="0" y1="80" x2="100" y2="20" stroke-width="15" stroke="black"></line>
-
 
         this._cd.markForCheck();
     };
