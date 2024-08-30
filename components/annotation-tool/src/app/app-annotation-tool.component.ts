@@ -163,12 +163,14 @@ export class AppAnnotationToolComponent implements OnInit {
                     break
                 case "SPLIT_COLS":
                 case "SPLIT_ROWS":
+                    this.rootEl.nativeElement.addEventListener('mousedown', this.splitCells, { passive: true });
                     this.rootEl.nativeElement.addEventListener('mousemove', this.drawLineToolMove, { passive: true });
 
             }
         } else {
             this._zoomable?.enablePan()
 
+            this.rootEl.nativeElement.removeEventListener('mousedown', this.splitCells);
             this.rootEl.nativeElement.removeEventListener('mousedown', this.drawRectToolStart);
             this.rootEl.nativeElement.removeEventListener('mousemove', this.drawRectToolMove);
             this.rootEl.nativeElement.removeEventListener('mouseup', this.drawRectToolEnd);
@@ -294,6 +296,56 @@ export class AppAnnotationToolComponent implements OnInit {
         this._cd.markForCheck();
     };
 
+    splitCells = (event:MouseEvent) => {
+        let p = this._computePoint(event)
+
+        let overlaps:(ann: Annotation, p: DOMPoint) => boolean;
+        let split:(ann: Annotation, p: DOMPoint) => [Annotation, Annotation];
+
+        switch (this._activeTool) {
+            case "SPLIT_ROWS":
+                overlaps = (ann: Annotation, p: DOMPoint) => {
+                    return ann.y0 + this.selectedTable!.y0 < p.y && ann.y1 + this.selectedTable!.y0 > p.y;
+                }
+                split = (ann: Annotation, p: DOMPoint):[Annotation, Annotation] => {
+                    return [
+                        {...ann, y1: p.y - this.selectedTable!.y0},
+                        {...ann, y0: p.y - this.selectedTable!.y0},
+                    ];
+                }
+                break
+            case "SPLIT_COLS":
+                overlaps = (ann: Annotation, p: DOMPoint) => {
+                    return ann.x0 + this.selectedTable!.x0 < p.x && ann.x1 + this.selectedTable!.x0 > p.x;
+                }
+                split = (ann: Annotation, p: DOMPoint):[Annotation, Annotation] => {
+                    return [
+                        {...ann, x1: p.x - this.selectedTable!.x0},
+                        {...ann, x0: p.x - this.selectedTable!.x0},
+                    ];
+                }
+                break
+            default:
+                return
+        }
+
+        const toSplit:Annotation[] = []
+        for (let ann of this.selectedTable!.table) {
+            if (overlaps(ann, p)) {
+                toSplit.push(ann)
+            }
+        }
+
+        for (let ann of toSplit) {
+            const splitCells = split(ann, p)
+            this.selectedTable!.table.splice(this.selectedTable!.table.indexOf(ann), 1)
+            this.selectedTable!.table.push(...splitCells)
+        }
+
+        this._syncAnnotations()
+        this._cd.markForCheck();
+    };
+
     drawLineToolMove = (event:MouseEvent) => {
         let p = this._computePoint(event)
         if (!this._line) {
@@ -316,7 +368,7 @@ export class AppAnnotationToolComponent implements OnInit {
                 this._line?.setAttribute("y2", `${this.height}`)
                 break
         }
-        this._line?.setAttribute("stroke-width", "3")
+        this._line?.setAttribute("stroke-width", "1")
         this._line?.setAttribute("stroke", "black")
 
         // <line x1="0" y1="80" x2="100" y2="20" stroke-width="15" stroke="black"></line>
@@ -377,12 +429,18 @@ export class AppAnnotationToolComponent implements OnInit {
         this.http
             .post<Annotation[]>(`/document/${this.documentId}/${this.pageNumber}/predictions`, this.annotations)
             .pipe(
-                tap(() => console.log("Starting update")),
                 takeUntil(this._onDestroy$)
             )
             .subscribe(annotations => {
-                console.log("Finished update")
                 this.annotations = annotations
+                if (this.selectedTable) {
+                    // We need to lookup the table again since after updating annotations, it's different set of objects.
+                    this.selectedTable = this.annotations.find(a => a.x0 === this.selectedTable!.x0
+                        && a.x1 === this.selectedTable!.x1
+                        && a.y0 === this.selectedTable!.y0
+                        && a.y1 === this.selectedTable!.y1
+                    )
+                }
                 this.loading = false;
                 this._cd.markForCheck()
             })
