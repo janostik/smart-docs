@@ -5,6 +5,7 @@ import {AppAnnotationComponent} from "./app-annotation.component";
 
 import svgPanZoom from "svg-pan-zoom";
 import Instance = SvgPanZoom.Instance;
+import {AppAnnotationCellComponent} from "./app-annotation-cell.component";
 
 export interface Annotation {
     score: number,
@@ -21,37 +22,74 @@ export interface Annotation {
     standalone: true,
     imports: [
         AppAnnotationComponent,
+        AppAnnotationCellComponent,
     ],
     template: `
         @if (imageUrl) {
             <svg #root>
                 <g #viewport>
-                    <svg:image x="0" y="0"
+                    @if (selectedTable) {
+                        <defs>
+                            <clipPath id="clip">
+                                <rect [attr.x]="selectedTable.x0"
+                                      [attr.y]="selectedTable.y0"
+                                      [attr.width]="selectedTable.x1 - selectedTable.x0"
+                                      [attr.height]="selectedTable.y1 - selectedTable.y0"
+                                ></rect>
+                            </clipPath>
+                        </defs>
+                        <image x="0" y="0"
+                               [attr.width]="width"
+                               [attr.height]="height"
+                               preserveAspectRatio="xMidYMax meet"
                                [attr.href]="imageUrl"
-                               width="595px"
-                               height="843px"
-                               preserveAspectRatio="xMidYMax meet"/>
+                               clip-path="url(#clip)"></image>
 
-                    @for (segment of annotations; track segment; let index = $index) {
-                        <svg:g app-annotation [id]="index"
-                               [attr.id]="'el-' + index"
-                               [box]="segment"
-                               [fill]="fill(segment)"
-                               [rootEl]="rootEl.nativeElement"
-                               [viewPortEl]="viewportEl.nativeElement"
-                               (rightClicked)="delete(segment)"
-                               (selected)="selectSegmentAndElement(segment, $event)"
-                               (segmentPositionChanged)="onPositionChanged()"
-                        />
+                        @for (segment of selectedTable.table; track segment; let index = $index) {
+                            <svg:g app-annotation-cell [id]="index"
+                                   [attr.id]="'el-' + index"
+                                   [segment]="segment"
+                                   [parent]="selectedTable"
+                            />
+                        }
+                    } @else {
+                        <image x="0" y="0"
+                               [attr.href]="imageUrl"
+                               [attr.width]="width"
+                               [attr.height]="height"
+                               preserveAspectRatio="xMidYMax meet"/>
+                        @for (segment of annotations; track segment; let index = $index) {
+                            <svg:g app-annotation [id]="index"
+                                   [attr.id]="'el-' + index"
+                                   [segment]="segment"
+                                   [rootEl]="rootEl.nativeElement"
+                                   [viewPortEl]="viewportEl.nativeElement"
+                                   (rightClicked)="delete(segment)"
+                                   (tableSelected)="selectedTable = segment"
+                                   (segmentPositionChanged)="onPositionChanged()"
+                            />
+                        }
                     }
                 </g>
             </svg>
-            
+
             <div class="floating">
-                @if (isDrawingElement) {
-                    <button (click)="isDrawingElement = false">(C)ancel</button>
+                @if (selectedTable) {
+                    @if (activeTool) {
+                        <button (click)="activeTool = undefined">Cancel</button>
+                    } @else {
+                        <button (click)="activeTool = 'MERGE'">Join cells</button>
+                        <button (click)="activeTool = 'SPLIT_COLS'">Split cols</button>
+                        <button (click)="activeTool = 'SPLIT_ROWS'">Split rows</button>
+                    }
+                    
+                    <button (click)="selectedTable = undefined">Exit</button>
                 } @else {
-                    <button (click)="isDrawingElement = true">(C)reate</button>
+                    @if (activeTool) {
+                        <button (click)="activeTool = undefined">(C)ancel</button>
+                    } @else {
+                        <button (click)="activeTool = 'DRAW'">(C)reate</button>
+                    }
                 }
             </div>
         }
@@ -77,16 +115,19 @@ export interface Annotation {
     `
 })
 export class AppAnnotationToolComponent implements OnInit {
+
+    width = "595px"
+    height = "843px"
+
     type: ('DOCUMENT' | 'TABLE') = 'DOCUMENT';
     documentId: string = '';
     pageNumber: string = '';
     imageUrl?: string
     annotations: Annotation[] = [];
-
+    selectedTable?:Annotation
 
     @ViewChild("root") rootEl!: ElementRef<SVGSVGElement>;
     @ViewChild("viewport") viewportEl!: ElementRef<SVGGElement>;
-
 
     http = inject(HttpClient)
     loading = false;
@@ -95,30 +136,49 @@ export class AppAnnotationToolComponent implements OnInit {
 
     private _zoomable?: Instance;
     private _rect?: SVGRectElement;
-    private _isDrawingElement: boolean = false;
+    private _line?: SVGLineElement;
+    // TODO: Rewrite to active tool enum
+    private _activeTool?: ('DRAW' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
+
     private _drawStartPoint: { x: number; y: number } = {x: 0, y: 0};
     protected _onDestroy$ = new Subject<void>();
 
-    set isDrawingElement(value: boolean) {
-        this._isDrawingElement = value;
-        if (this._rect) {
-            this._rect.remove()
-            this._rect = undefined
-        }
-        if (this.isDrawingElement && !!this.rootEl) {
+    set activeTool(value) {
+        this._activeTool = value;
+        this._clearFragments();
+
+        if (this._activeTool) {
             this._zoomable?.disablePan()
-            this.rootEl.nativeElement.addEventListener('mousedown', this.drawStart, { passive: true });
-        } else if (this.viewportEl) {
+
+            switch (this._activeTool) {
+                case "DRAW":
+                    this.rootEl.nativeElement.removeEventListener('mousedown', this.drawRectToolStart);
+                    this.rootEl.nativeElement.removeEventListener('mousemove', this.drawRectToolMove);
+                    this.rootEl.nativeElement.removeEventListener('mouseup', this.drawRectToolEnd);
+                    break
+                case "MERGE":
+                    this.rootEl.nativeElement.addEventListener('mousedown', this.drawRectToolStart, { passive: true });
+                    this.rootEl.nativeElement.addEventListener('mousemove', this.drawRectToolMove, { passive: true });
+                    this.rootEl.nativeElement.addEventListener('mouseup', this.drawRectToolEnd, { passive: true });
+                    break
+                case "SPLIT_COLS":
+                case "SPLIT_ROWS":
+                    this.rootEl.nativeElement.addEventListener('mousemove', this.drawLineToolMove, { passive: true });
+
+            }
+        } else {
             this._zoomable?.enablePan()
-            this.rootEl.nativeElement.removeEventListener('mousedown', this.drawStart);
-            this.rootEl.nativeElement.removeEventListener('mousemove', this.drawMove);
-            this.rootEl.nativeElement.removeEventListener('mouseup', this.drawEnd);
+
+            this.rootEl.nativeElement.removeEventListener('mousedown', this.drawRectToolStart);
+            this.rootEl.nativeElement.removeEventListener('mousemove', this.drawRectToolMove);
+            this.rootEl.nativeElement.removeEventListener('mouseup', this.drawRectToolEnd);
+            this.rootEl.nativeElement.removeEventListener('mouseup', this.drawLineToolMove);
         }
         this._cd.markForCheck();
     }
 
-    get isDrawingElement() {
-        return this._isDrawingElement;
+    get activeTool() {
+        return this._activeTool;
     }
 
     constructor(private elementRef: ElementRef, private _cd: ChangeDetectorRef) {
@@ -141,34 +201,20 @@ export class AppAnnotationToolComponent implements OnInit {
             })
     }
 
-    fill(segment: Annotation) {
-        switch (segment.label) {
-            default:
-                return "#ff6600"
-        }
-    }
-
-    selectSegmentAndElement(prediction: Annotation, $event: MouseEvent) {
-        console.log(`Position selected ${prediction}`)
-    }
-
     onPositionChanged() {
         this._syncAnnotations()
     }
 
-    drawStart = (event:MouseEvent) => {
+    drawRectToolStart = (event:MouseEvent) => {
         this._drawStartPoint = this._computePoint(event);
         this._rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
         this._rect.setAttribute("stroke", `rgba(130, 150, 167, 1)`)
         this._rect.setAttribute("fill", `rgba(130, 150, 167, 0.65)`)
         this.viewportEl.nativeElement.appendChild(this._rect)
-
-        this.rootEl.nativeElement.addEventListener('mousemove', this.drawMove, { passive: true });
-        this.rootEl.nativeElement.addEventListener('mouseup', this.drawEnd, { passive: true });
         this._cd.markForCheck();
     };
 
-    drawMove = (event:MouseEvent) => {
+    drawRectToolMove = (event:MouseEvent) => {
         let p = this._computePoint(event)
         let w = Math.abs(p.x - this._drawStartPoint.x);
         let h = Math.abs(p.y - this._drawStartPoint.y);
@@ -188,28 +234,107 @@ export class AppAnnotationToolComponent implements OnInit {
         this._cd.markForCheck();
     };
 
-    drawEnd = ($event: MouseEvent) => {
+    drawRectToolEnd = ($event: MouseEvent) => {
         const minSize = 10
         if (this._rect !== undefined) {
 
             const width = +this._rect.getAttribute("width")!
             const height = +this._rect.getAttribute("height")!
             if (width > minSize && height > minSize) {
-                this.annotations.push({
-                    x0: +this._rect.getAttribute("x")!,
-                    y0: +this._rect.getAttribute("y")!,
-                    x1: +this._rect.getAttribute("x")! + +this._rect.getAttribute("width")!,
-                    y1: +this._rect.getAttribute("y")! + +this._rect.getAttribute("height")!,
-                    label: this.activeLabel,
-                    table: [],
-                    score: 1.0
-                })
+                switch (this.activeTool) {
+                    case "DRAW":
+                        this.annotations.push({
+                            x0: +this._rect.getAttribute("x")!,
+                            y0: +this._rect.getAttribute("y")!,
+                            x1: +this._rect.getAttribute("x")! + +this._rect.getAttribute("width")!,
+                            y1: +this._rect.getAttribute("y")! + +this._rect.getAttribute("height")!,
+                            label: this.activeLabel,
+                            table: [],
+                            score: 1.0
+                        })
+                        break;
+                    case "MERGE":
+                        let x0 = +this._rect.getAttribute("x")!
+                        let y0 = +this._rect.getAttribute("y")!
+                        let x1 = +this._rect.getAttribute("x")! + +this._rect.getAttribute("width")!
+                        let y1 = +this._rect.getAttribute("y")! + +this._rect.getAttribute("height")!
+
+                        let toMerge:Annotation[] = []
+                        for (let el of this.selectedTable!.table) {
+                            if (this.overlaps(el, x0, y0, x1, y1)) {
+                                toMerge.push(el)
+                            }
+                        }
+                        let minX = 99999
+                        let minY = 99999
+                        let maxX = -99999
+                        let maxY = -99999
+                        for (let el of toMerge) {
+                            minX = Math.min(el.x0, minX)
+                            minY = Math.min(el.y0, minY)
+                            maxX = Math.max(el.x1, maxX)
+                            maxY = Math.max(el.y1, maxY)
+
+                            this.selectedTable?.table.splice(this.selectedTable?.table.indexOf(el), 1)
+                        }
+                        this.selectedTable?.table.push({
+                            x0: minX,
+                            y0: minY,
+                            x1: maxX,
+                            y1: maxY,
+                            label: "cell",
+                            table: [],
+                            score: 1.0
+                        })
+                }
             }
         }
-        this.isDrawingElement = false
+        this.activeTool = undefined
         this._syncAnnotations()
         this._cd.markForCheck();
     };
+
+    drawLineToolMove = (event:MouseEvent) => {
+        let p = this._computePoint(event)
+        if (!this._line) {
+            this._line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
+            this._line.setAttribute("stroke", `rgba(130, 150, 167, 1)`)
+            this._line.setAttribute("fill", `rgba(130, 150, 167, 0.65)`)
+            this.viewportEl.nativeElement.appendChild(this._line)
+        }
+        switch (this._activeTool) {
+            case "SPLIT_ROWS":
+                this._line?.setAttribute("x1", "0")
+                this._line?.setAttribute("x2", `${this.width}`)
+                this._line?.setAttribute("y1", `${p.y}`)
+                this._line?.setAttribute("y2", `${p.y}`)
+                break
+            case "SPLIT_COLS":
+                this._line?.setAttribute("x1", `${p.x}`)
+                this._line?.setAttribute("x2", `${p.x}`)
+                this._line?.setAttribute("y1", "0")
+                this._line?.setAttribute("y2", `${this.height}`)
+                break
+        }
+        this._line?.setAttribute("stroke-width", "3")
+        this._line?.setAttribute("stroke", "black")
+
+        // <line x1="0" y1="80" x2="100" y2="20" stroke-width="15" stroke="black"></line>
+
+
+        this._cd.markForCheck();
+    };
+
+    private _clearFragments() {
+        if (this._rect) {
+            this._rect.remove()
+            this._rect = undefined
+        }
+        if (this._line) {
+            this._line.remove()
+            this._line = undefined
+        }
+    }
 
     private _computePoint(event:MouseEvent) {
         let point = this.rootEl.nativeElement.createSVGPoint();
@@ -269,5 +394,11 @@ export class AppAnnotationToolComponent implements OnInit {
             this.annotations.splice(index, 1)
         }
         this._syncAnnotations();
+    }
+
+    private overlaps(annotation: Annotation, x0: number, y0: number, x1: number, y1: number): boolean {
+        const xOverlap = Math.max(0, Math.min(annotation.x1 + this.selectedTable!.x0, x1) - Math.max(annotation.x0 + this.selectedTable!.x0, x0))
+        const yOverlap = Math.max(0, Math.min(annotation.y1 + this.selectedTable!.y0, y1) - Math.max(annotation.y0 + this.selectedTable!.y0, y0))
+        return (xOverlap * yOverlap) > 0
     }
 }

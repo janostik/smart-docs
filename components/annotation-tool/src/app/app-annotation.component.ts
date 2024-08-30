@@ -31,13 +31,32 @@ enum Handle {
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <svg class="svg-wrapper" [attr.x]="box.x0" [attr.y]="box.y0" [attr.width]="box.x1 - box.x0" [attr.height]="box.y1 - box.y0" (contextmenu)="rightClicked.emit(); $event.preventDefault()">
+        
+<!--        TODO: Solve delete -->
+        <!-- (contextmenu)="rightClicked.emit(); $event.preventDefault()"-->
+        <svg class="svg-wrapper" [attr.x]="segment.x0" [attr.y]="segment.y0" [attr.width]="segment.x1 - segment.x0"
+             [attr.height]="segment.y1 - segment.y0" (dblclick)="selectIfTable()">
 
+            @if (segment.label === 'table') {
+                <g>
+                    @for (cell of segment.table; track cell) {
+                        <rect [attr.x]="cell.x0"
+                              [attr.y]="cell.y0"
+                              [attr.width]="cell.x1 - cell.x0"
+                              [attr.height]="cell.y1 - cell.y0"
+                              [attr.stroke]="fill"
+                              style="fill-opacity: 0"
+                        />
+                    }
+                </g>
+            }
+            
             <g #rect>
-                
+
                 <!-- Actual content -->
                 <rect width="100%" height="100%"
                       class="minimal"
+                      [attr.fill]="fill"
                       [attr.stroke]="fill"/>
 
                 <rect width="100%" height="100%"
@@ -50,19 +69,21 @@ enum Handle {
                       [attr.x]="0" [attr.y]="0"
                       [attr.fill]="fill" cursor="nwse-resize"/>
                 <rect #handleTR [attr.width]="resizeBoxSize" [attr.height]="resizeBoxSize"
-                      [attr.x]="box.x1 - box.x0 - (resizeBoxSize)" [attr.y]="0"
+                      [attr.x]="segment.x1 - segment.x0 - (resizeBoxSize)" [attr.y]="0"
                       [attr.fill]="fill"
                       cursor="nesw-resize"/>
                 <rect #handleBR [attr.width]="resizeBoxSize" [attr.height]="resizeBoxSize"
-                      [attr.x]="box.x1 - box.x0 - (resizeBoxSize)"
-                      [attr.y]="box.y1 - box.y0 - (resizeBoxSize)"
+                      [attr.x]="segment.x1 - segment.x0 - (resizeBoxSize)"
+                      [attr.y]="segment.y1 - segment.y0 - (resizeBoxSize)"
                       [attr.fill]="fill"
                       cursor="nwse-resize"/>
                 <rect #handleBL [attr.width]="resizeBoxSize" [attr.height]="resizeBoxSize"
-                      [attr.x]="0" [attr.y]="box.y1 - box.y0 - (resizeBoxSize)"
+                      [attr.x]="0" [attr.y]="segment.y1 - segment.y0 - (resizeBoxSize)"
                       [attr.fill]="fill"
                       cursor="nesw-resize"/>
             </g>
+
+            
         </svg>
     `,
     styles: `
@@ -81,7 +102,6 @@ enum Handle {
 
         rect.minimal {
             stroke-width: 0;
-            fill: #ff6600;
             fill-opacity: 0.6;
         }
         
@@ -93,14 +113,11 @@ enum Handle {
 export class AppAnnotationComponent implements OnInit, AfterViewInit {
 
     @Input({required: true}) id!: number;
-    @Input({required: true}) fill = "rgba(0,0,0,0)";
-    @Input() headerWidth = 0;
-    @Input() stroke = "#ff6600";
     @Input({alias: "rootEl", required: true}) root!: SVGSVGElement;
     @Input({alias: "viewPortEl", required: true}) viewport!: SVGGElement;
-    @Input({required: true}) box!:Annotation;
+    @Input({required: true}) segment!:Annotation;
 
-    @Output() selected = new EventEmitter<MouseEvent>();
+    @Output() tableSelected = new EventEmitter<MouseEvent>();
     @Output() rightClicked = new EventEmitter<void>();
     @Output() segmentPositionChanged = new EventEmitter<void>();
 
@@ -116,9 +133,6 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
     private _resizeHandle?: Handle;
     private _resizeStartBox?: AnnotationBox;
 
-    private _selectEventFired = false;
-    private _selectSegmentTimeout?: any;
-
     constructor(private _cd: ChangeDetectorRef) {
     }
 
@@ -128,23 +142,34 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
 
     ngAfterViewInit(): void {
 
-        // Remove all eventListeners on rect element
-        this.rect.nativeElement.removeEventListener('click', this.select);
-
         this.handleTL?.nativeElement.addEventListener('mousedown', e => this.resizeStart(e, Handle.TL), { passive: true });
         this.handleTR?.nativeElement.addEventListener('mousedown', e => this.resizeStart(e, Handle.TR), { passive: true });
         this.handleBR?.nativeElement.addEventListener('mousedown', e => this.resizeStart(e, Handle.BR), { passive: true });
         this.handleBL?.nativeElement.addEventListener('mousedown', e => this.resizeStart(e, Handle.BL), { passive: true });
     }
 
+    get fill() {
+        // color scheme taken from: https://teenage.engineering/guides/od-11
+        switch (this.segment?.label) {
+            case "table":
+                return "#fbb03b"
+            case "header":
+                return "#c1272d"
+            case "paragraph":
+                return "#12446e"
+            default:
+                return "#ff6600"
+        }
+    }
+
     resizeStart = (event:MouseEvent, handle:Handle) => {
         this._resizeHandle = handle;
         this._resizeStartBox = {
             point: this._computePoint(event),
-            x0: this.box.x0,
-            y0: this.box.y0,
-            x1: this.box.x1,
-            y1: this.box.y1,
+            x0: this.segment.x0,
+            y0: this.segment.y0,
+            x1: this.segment.x1,
+            y1: this.segment.y1,
         };
 
         // now we attach mousemove and end move events to the main SVG:
@@ -167,7 +192,7 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
 
             // const minBox = (n: number) => n < (this.resizeBoxSize * 2) ? (this.resizeBoxSize * 2) : n;
 
-            const changedPosition = { ...this.box };
+            const changedPosition = { ...this.segment };
             switch (this._resizeHandle) {
                 case Handle.BR:
                     changedPosition.x1 = start.x1 + diff.x;
@@ -194,10 +219,10 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
                     // changedPosition.height = minBox(start.height - diff.y);
                     break;
             }
-            this.box.x0 = changedPosition.x0
-            this.box.x1 = changedPosition.x1
-            this.box.y0 = changedPosition.y0
-            this.box.y1 = changedPosition.y1
+            this.segment.x0 = changedPosition.x0
+            this.segment.x1 = changedPosition.x1
+            this.segment.y0 = changedPosition.y0
+            this.segment.y1 = changedPosition.y1
         }
 
         event.stopPropagation();
@@ -212,15 +237,6 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
         this._cd.markForCheck();
     };
 
-    select = (event:MouseEvent) => {
-        if (!this._selectEventFired) {
-            this.selected.emit(event);
-            // To prevent emitting selected event twice
-            this._setSelectEventFired();
-        }
-
-    }
-
     private _computePoint(event:MouseEvent) {
         let point = this.root.createSVGPoint();
         if (point) {
@@ -231,15 +247,10 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
         return point;
     }
 
-    // To prevent emitting selected event twice
-    private _setSelectEventFired() {
-        // set eventFired to TRUE...
-        this._selectEventFired = true;
-        clearTimeout(this._selectSegmentTimeout);
-        this._selectSegmentTimeout = setTimeout(() => {
-            // ... and clear it soon so it won't hang with TRUE status (we cannot rely on clearing in methods dragEnd and select because these methods are not called always together)
-            this._selectEventFired = false;
-            this._cd.markForCheck();
-        }, 10);
+    selectIfTable() {
+        if (this.segment?.label === 'table') {
+            console.log("Selecting table...")
+            this.tableSelected.emit()
+        }
     }
 }
