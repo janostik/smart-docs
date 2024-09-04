@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"bytes"
 	"cmp"
 	"fmt"
 	"slices"
@@ -9,13 +10,13 @@ import (
 
 const minOverlap = 0.4
 
-type segment struct {
+type Segment struct {
 	*models.Prediction
 	content string
 	words   []models.WordData
 }
 
-func (s *segment) realign() {
+func (s *Segment) realign() {
 	if len(s.words) == 0 {
 		return
 	}
@@ -48,10 +49,10 @@ func (s *segment) realign() {
 }
 
 func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models.Prediction) string {
-	segments := make([]segment, len(*predictions))
+	segments := make([]Segment, len(*predictions))
 
 	for i := range *predictions {
-		segments[i] = segment{
+		segments[i] = Segment{
 			content:    "",
 			Prediction: &(*predictions)[i],
 			words:      make([]models.WordData, 0),
@@ -73,36 +74,50 @@ func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models
 
 	// TODO: Extract different renderers
 	var html = ""
-	for _, s := range segments {
-		switch s.Label {
+	for s, _ := range segments {
+		segment := segments[s]
+		switch segment.Label {
 		case "table":
-			// TODO: Parse table:
-			html += "\n<table>TODO TABLE<table>\n"
+			table := segment.ParseTable()
+			// TODO: Rewrite with: https://pkg.go.dev/strings@master#Builder
+			var buffer bytes.Buffer
+			buffer.WriteString("<table>")
+			for _, row := range table {
+				buffer.WriteString("<tr>")
+				for _, cell := range row {
+					buffer.WriteString("<td>")
+					buffer.WriteString(cell.content)
+					buffer.WriteString("</td>")
+				}
+				buffer.WriteString("</tr>")
+			}
+			buffer.WriteString("</table>")
+			html += buffer.String()
 			break
 		case "paragraph":
-			html += fmt.Sprintf("<p>%s</p>", s.content)
+			html += fmt.Sprintf("<p>%s</p>", segment.content)
 		case "header":
-			html += fmt.Sprintf("<h5>%s</h5>", s.content)
+			html += fmt.Sprintf("<h5>%s</h5>", segment.content)
 		default:
-			html += fmt.Sprintf("<span>%s</span>", s.content)
+			html += fmt.Sprintf("<span>%s</span>", segment.content)
 		}
 	}
 	return html
 }
 
-func lookupBestSegment(word models.WordData, segments *[]segment) *segment {
+func lookupBestSegment(word models.WordData, segments *[]Segment) *Segment {
 
 	//	find first smallest segment that overlaps with word polygon
 	//	we pick smallest, since bigger segments have bigger chance of incorrectly overlapping neighbouring segments
-	var overlappingSegments []*segment
+	var overlappingSegments []*Segment
 	for i := range *segments {
 		s := &(*segments)[i]
-		if intersection(word, s) > minOverlap {
+		if Intersection(word.Rect, s.Rect) > minOverlap {
 			overlappingSegments = append(overlappingSegments, s)
 		}
 	}
-	areaCmp := func(a, b *segment) int {
-		return cmp.Compare(area(a.Rect), area(b.Rect))
+	areaCmp := func(a, b *Segment) int {
+		return cmp.Compare(Area(a.Rect), Area(b.Rect))
 	}
 	slices.SortFunc(overlappingSegments, areaCmp)
 
@@ -113,17 +128,17 @@ func lookupBestSegment(word models.WordData, segments *[]segment) *segment {
 	}
 }
 
-func intersection(word models.WordData, s *segment) float32 {
+func Intersection(word models.Rect, s models.Rect) float32 {
 	overlap := overlapArea(word, s)
-	return overlap / area(word.Rect)
+	return overlap / Area(word)
 }
 
-func overlapArea(w models.WordData, p *segment) float32 {
+func overlapArea(w models.Rect, p models.Rect) float32 {
 	xOverlap := max(0.0, min(w.X1, p.X1)-max(w.X0, p.X0))
 	yOverlap := max(0.0, min(w.Y1, p.Y1)-max(w.Y0, p.Y0))
 	return xOverlap * yOverlap
 }
 
-func area(r models.Rect) float32 {
+func Area(r models.Rect) float32 {
 	return (r.X1 - r.X0) * (r.Y1 - r.Y0)
 }
