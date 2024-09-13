@@ -9,6 +9,18 @@ type Rect struct {
 	Y1 float32 `json:"y1"`
 }
 
+func (r Rect) Width() float32 {
+	return r.X1 - r.X0
+}
+
+func (r Rect) CenterX() float32 {
+	return (r.X0 + r.X1) / 2
+}
+
+func (r Rect) CenterY() float32 {
+	return (r.Y0 + r.Y1) / 2
+}
+
 type WordData struct {
 	Rect
 	Text string
