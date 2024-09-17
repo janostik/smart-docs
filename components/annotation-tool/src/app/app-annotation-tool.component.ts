@@ -81,6 +81,7 @@ export interface Annotation {
                         <button (click)="activeTool = 'MERGE'">Join cells</button>
                         <button (click)="activeTool = 'SPLIT_COLS'">Split cols</button>
                         <button (click)="activeTool = 'SPLIT_ROWS'">Split rows</button>
+                        <button (click)="createTable()">Create Table</button>
                     }
                     
                     <button (click)="selectedTable = undefined">Exit</button>
@@ -439,6 +440,19 @@ export class AppAnnotationToolComponent implements OnInit {
                 this.loading = false;
                 this._cd.markForCheck()
             })
+    }
+
+    createTable() {
+        this.selectedTable!.table = [{
+            x0: 0,
+            x1: this.selectedTable!.x1 - this.selectedTable!.x0,
+            y0: 0,
+            y1: this.selectedTable!.y1 - this.selectedTable!.y0,
+            table: [],
+            score: 1.0,
+            label: 'cell'
+        }]
+        this._syncAnnotations()
     }
 
     delete(segment: Annotation) {

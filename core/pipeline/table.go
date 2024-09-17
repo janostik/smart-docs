@@ -84,7 +84,7 @@ func (s *Segment) ParseTable() [][]Cell {
 
 	var table [][]Cell
 	topLeft := findTopLeftCell(cellsToProcess)
-	deleteFromSlice(&cellsToProcess, topLeft)
+	cellsToProcess = deleteFromSlice(cellsToProcess, topLeft)
 	currentRow := []Cell{topLeft}
 
 	// START: BUILDING OF TABLE
@@ -98,7 +98,7 @@ func (s *Segment) ParseTable() [][]Cell {
 			currentRow = []Cell{}
 		}
 		currentRow = append(currentRow, topLeft)
-		deleteFromSlice(&cellsToProcess, topLeft)
+		cellsToProcess = deleteFromSlice(cellsToProcess, topLeft)
 	}
 
 	if len(currentRow) > 0 {
@@ -107,8 +107,8 @@ func (s *Segment) ParseTable() [][]Cell {
 	// END: BUILDING OF TABLE
 
 	// START: HANDLE ROW SPANS
-	minCols := 0
-	maxCols := 999
+	minCols := 999
+	maxCols := 0
 	for r, _ := range table {
 		row := table[r]
 		if len(row) > maxCols {
@@ -120,13 +120,14 @@ func (s *Segment) ParseTable() [][]Cell {
 		offset := row[0].X0
 		for c, _ := range row {
 			cell := row[c]
+			table[r][c].OffsetStart = offset
 			cell.OffsetStart = offset
 			offset = offset + cell.Width()
 		}
 	}
 
 	xGrid := make([]float32, maxCols+1)
-	yGrid := make([]float32, len(table))
+	yGrid := make([]float32, len(table)+1)
 
 	for r := range len(table) {
 		row := table[r]
@@ -148,21 +149,27 @@ func (s *Segment) ParseTable() [][]Cell {
 				}
 			}
 		}
-		var avgY float32 = 0
+		var avgY0 float32 = 0
+		var avgY1 float32 = 0
 		for c := range minCols {
-			avgY = avgY + row[c].Y1
+			avgY0 = avgY0 + row[c].Y0
+			avgY1 = avgY1 + row[c].Y1
 		}
-		avgY = avgY / float32(minCols)
-		yGrid[r] = avgY
+		if r == 0 {
+			avgY0 = avgY0 / float32(minCols)
+			yGrid[r] = avgY0
+		}
+		avgY1 = avgY1 / float32(minCols)
+		yGrid[r+1] = avgY1
 	}
 
 	for r, _ := range table {
 		for c, _ := range table[r] {
 			cell := table[r][c]
-			cell.X0 = nearest(cell.X0, xGrid)
-			cell.X1 = nearest(cell.X1, xGrid)
-			cell.Y0 = nearest(cell.Y0, yGrid)
-			cell.Y1 = nearest(cell.Y1, yGrid)
+			table[r][c].X0 = nearest(cell.X0, xGrid)
+			table[r][c].X1 = nearest(cell.X1, xGrid)
+			table[r][c].Y0 = nearest(cell.Y0, yGrid)
+			table[r][c].Y1 = nearest(cell.Y1, yGrid)
 		}
 	}
 
@@ -185,8 +192,8 @@ func (s *Segment) ParseTable() [][]Cell {
 				}
 			}
 
-			cell.Colspan = colspan
-			cell.Rowspan = rowspan
+			table[r][c].Colspan = colspan
+			table[r][c].Rowspan = rowspan
 		}
 	}
 	// END: HANDLE ROW SPANS
@@ -217,15 +224,15 @@ func nearest(item float32, grid []float32) float32 {
 	return nearestItem
 }
 
-func deleteFromSlice(input *[]Cell, toDelete Cell) {
+func deleteFromSlice(input []Cell, toDelete Cell) []Cell {
 
-	for i, cell := range *input {
+	for i, cell := range input {
 		if toDelete.X0 == cell.X0 && toDelete.X1 == cell.X1 && toDelete.Y0 == cell.Y0 && toDelete.Y1 == cell.Y1 {
-			*input = slices.Delete(*input, i, i)
-			return
+			return slices.Delete(input, i, i+1)
 		}
 	}
 
+	return input
 }
 
 func findCellsToRight(topLeft Cell, row []Cell) []Cell {
@@ -241,7 +248,18 @@ func findCellsToRight(topLeft Cell, row []Cell) []Cell {
 }
 
 func findTopLeftCell(row []Cell) Cell {
-	return row[0]
+	var minScore float32 = 99999
+	var topLeftCell Cell
+	var m float32 = 0.1 // slope. See this for more explanation: https://math.stackexchange.com/questions/2912005/get-the-top-left-most-point-from-random-points
+	for c, _ := range row {
+		cell := row[c]
+		score := cell.Y0 + m*cell.X0
+		if score < minScore {
+			minScore = score
+			topLeftCell = row[c]
+		}
+	}
+	return topLeftCell
 }
 
 func indexOfSmallest(diffs [4]float32) int {
