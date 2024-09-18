@@ -20,11 +20,6 @@ func (s *Segment) ParseTable() [][]Cell {
 
 	var cells []Cell
 	for _, p := range s.Prediction.Table {
-		if p.Y1-p.Y0 < 16 {
-			// cleanup due to bad segmentation to handle small cells
-			// maybe we should add boundary to tables.
-			continue
-		}
 		cells = append(cells, Cell{
 			Prediction: &p,
 		})
@@ -150,17 +145,20 @@ func (s *Segment) ParseTable() [][]Cell {
 			}
 		}
 		var avgY0 float32 = 0
-		var avgY1 float32 = 0
 		for c := range minCols {
 			avgY0 = avgY0 + row[c].Y0
-			avgY1 = avgY1 + row[c].Y1
 		}
-		if r == 0 {
-			avgY0 = avgY0 / float32(minCols)
-			yGrid[r] = avgY0
+		avgY0 = avgY0 / float32(minCols)
+		yGrid[r] = avgY0
+		// Ensure we can snap to bottom border
+		if r == len(table)-1 {
+			var avgY1 float32 = 0
+			for c := range minCols {
+				avgY1 = avgY1 + row[c].Y1
+			}
+			avgY1 = avgY1 / float32(minCols)
+			yGrid[r+1] = avgY1
 		}
-		avgY1 = avgY1 / float32(minCols)
-		yGrid[r+1] = avgY1
 	}
 
 	for r, _ := range table {
