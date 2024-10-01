@@ -73,7 +73,7 @@ func drawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction) 
 	rgba := image.NewRGBA(img.Bounds())
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{}, draw.Src)
 	gc := draw2dimg.NewGraphicContext(rgba)
-	gc.SetLineWidth(4)
+	gc.SetLineWidth(2)
 	for _, prediction := range *predictions {
 		switch prediction.Label {
 		case "table":

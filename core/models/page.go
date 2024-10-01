@@ -13,6 +13,10 @@ func (r Rect) Width() float32 {
 	return r.X1 - r.X0
 }
 
+func (r Rect) Height() float32 {
+	return r.Y1 - r.Y0
+}
+
 func (r Rect) CenterX() float32 {
 	return (r.X0 + r.X1) / 2
 }

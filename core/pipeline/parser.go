@@ -1,11 +1,11 @@
 package pipeline
 
 import (
-	"bytes"
 	"cmp"
 	"fmt"
 	"slices"
 	"smart-docs/core/models"
+	"strings"
 )
 
 const minOverlap = 0.4
@@ -79,20 +79,19 @@ func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models
 		switch segment.Label {
 		case "table":
 			table := segment.ParseTable()
-			// TODO: Rewrite with: https://pkg.go.dev/strings@master#Builder
-			var buffer bytes.Buffer
-			buffer.WriteString("<table>")
+			var b strings.Builder
+			b.WriteString("<table>")
 			for _, row := range table {
-				buffer.WriteString("<tr>")
+				b.WriteString("<tr>")
 				for _, cell := range row {
-					buffer.WriteString("<td>")
-					buffer.WriteString(cell.content)
-					buffer.WriteString("</td>")
+					b.WriteString(fmt.Sprintf("<td colspan=\"%d\" rowspan=\"%d\">", cell.Colspan, cell.Rowspan))
+					b.WriteString(cell.content)
+					b.WriteString("</td>")
 				}
-				buffer.WriteString("</tr>")
+				b.WriteString("</tr>")
 			}
-			buffer.WriteString("</table>")
-			html += buffer.String()
+			b.WriteString("</table>")
+			html += b.String()
 			break
 		case "paragraph":
 			html += fmt.Sprintf("<p>%s</p>", segment.content)

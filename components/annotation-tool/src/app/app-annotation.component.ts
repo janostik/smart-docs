@@ -31,10 +31,7 @@ enum Handle {
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        
-<!--        TODO: Solve delete -->
-        <!-- (contextmenu)="rightClicked.emit(); $event.preventDefault()"-->
-        <svg class="svg-wrapper" [attr.x]="segment.x0" [attr.y]="segment.y0" [attr.width]="segment.x1 - segment.x0"
+        <svg class="svg-wrapper" (contextmenu)="rightClicked.emit(); $event.preventDefault()" [attr.x]="segment.x0" [attr.y]="segment.y0" [attr.width]="segment.x1 - segment.x0"
              [attr.height]="segment.y1 - segment.y0" (dblclick)="selectIfTable()">
 
             @if (segment.label === 'table') {

@@ -46,25 +46,25 @@ a {
 TABLE
  */
 
-table {
+table.data-table {
     border: none;
     margin-left: -24px;
     margin-right: -24px;
 }
 
-th, td {
+table.data-table th, td {
     border-top: 1px solid #EEEEF2;
     text-align: left;
     padding: 8px 16px;
 }
 
-table tr:last-child {
+table.data-table tr:last-child {
     td {
         border-bottom: 1px solid #EEEEF2;
     }
 }
 
-td > a {
+table.data-table td > a {
     text-decoration: none;
 }
 
@@ -112,6 +112,16 @@ section > img {
     border-radius: 10px;
     width: 50%;
 }
+
+article {
+    padding: 16px;
+    max-width: 50%;
+}
+
+article table td, article table th {
+    border: 1px solid black;
+}
+
 
 /**
 FILE UPLOAD

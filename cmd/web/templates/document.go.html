@@ -33,9 +33,9 @@
 
 {{ define "page" }}
     <img src="/assets/images/{{.DocumentId}}/{{.PageNum}}.jpg"  alt="Preview of page {{.PageNum}}" />
-    <pre>
+    <article>
         {{.Html}}
-    </pre>
+    </article>
 {{ end }}
 </body>
 </html>

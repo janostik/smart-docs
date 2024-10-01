@@ -9,6 +9,7 @@ import (
 type Cell struct {
 	*models.Prediction
 	content     string
+	words       []models.WordData
 	OffsetStart float32
 	Colspan     int
 	Rowspan     int
@@ -65,6 +66,15 @@ func (s *Segment) ParseTable() [][]Cell {
 					cellToAdjust.Y0 = cellToKeep.Y1
 				}
 			}
+		}
+	}
+
+	// Assign content
+	for _, word := range s.words {
+		segment := lookupBestCell(word, &cells, s.X0, s.Y0)
+		if segment != nil {
+			segment.content = segment.content + " " + word.Text
+			segment.words = append(segment.words, word)
 		}
 	}
 
@@ -237,7 +247,12 @@ func findCellsToRight(topLeft Cell, row []Cell) []Cell {
 	var result []Cell
 	for c, _ := range row {
 		cell := row[c]
-		isWithinY := topLeft.Y0 < cell.CenterY() && cell.CenterY() < topLeft.Y1
+		isWithinY := false
+		if cell.Height() > topLeft.Height() {
+			isWithinY = cell.Y0 < topLeft.CenterY() && topLeft.CenterY() < cell.Y1
+		} else {
+			isWithinY = topLeft.Y0 < cell.CenterY() && cell.CenterY() < topLeft.Y1
+		}
 		if cell.CenterX() > topLeft.X1 && isWithinY {
 			result = append(result, cell)
 		}
@@ -248,7 +263,7 @@ func findCellsToRight(topLeft Cell, row []Cell) []Cell {
 func findTopLeftCell(row []Cell) Cell {
 	var minScore float32 = 99999
 	var topLeftCell Cell
-	var m float32 = 0.1 // slope. See this for more explanation: https://math.stackexchange.com/questions/2912005/get-the-top-left-most-point-from-random-points
+	var m float32 = 0.05 // slope. See this for more explanation: https://math.stackexchange.com/questions/2912005/get-the-top-left-most-point-from-random-points
 	for c, _ := range row {
 		cell := row[c]
 		score := cell.Y0 + m*cell.X0
@@ -286,5 +301,30 @@ func absDiff(a, b float32) float32 {
 		return a - b
 	} else {
 		return b - a
+	}
+}
+
+// TODO: Refactor to use shared function with parser
+func lookupBestCell(word models.WordData, cells *[]Cell, offsetX float32, offsetY float32) *Cell {
+
+	//	find first smallest segment that overlaps with word polygon
+	//	we pick smallest, since bigger segments have bigger chance of incorrectly overlapping neighbouring segments
+	var overlappingSegments []*Cell
+	for i := range *cells {
+		c := &(*cells)[i]
+		//c.Rect
+		if Intersection(word.Rect, models.Rect{X0: offsetX + c.X0, Y0: offsetY + c.Y0, X1: offsetX + c.X1, Y1: offsetY + c.Y1}) > minOverlap {
+			overlappingSegments = append(overlappingSegments, c)
+		}
+	}
+	areaCmp := func(a, b *Cell) int {
+		return cmp.Compare(Area(a.Rect), Area(b.Rect))
+	}
+	slices.SortFunc(overlappingSegments, areaCmp)
+
+	if len(overlappingSegments) > 0 {
+		return overlappingSegments[0]
+	} else {
+		return nil
 	}
 }

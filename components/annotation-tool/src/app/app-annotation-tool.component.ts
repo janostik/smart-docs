@@ -1,11 +1,11 @@
-import {ChangeDetectorRef, Component, ElementRef, inject, OnInit, ViewChild} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, HostListener, inject, OnInit, ViewChild} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {Subject, takeUntil, tap} from "rxjs";
+import {Subject, takeUntil} from "rxjs";
 import {AppAnnotationComponent} from "./app-annotation.component";
 
 import svgPanZoom from "svg-pan-zoom";
-import Instance = SvgPanZoom.Instance;
 import {AppAnnotationCellComponent} from "./app-annotation-cell.component";
+import Instance = SvgPanZoom.Instance;
 
 export interface Annotation {
     score: number,
@@ -76,20 +76,22 @@ export interface Annotation {
             <div class="floating">
                 @if (selectedTable) {
                     @if (activeTool) {
-                        <button (click)="activeTool = undefined">Cancel</button>
+                        <button (click)="activeTool = undefined">(ESC) Cancel</button>
                     } @else {
-                        <button (click)="activeTool = 'MERGE'">Join cells</button>
-                        <button (click)="activeTool = 'SPLIT_COLS'">Split cols</button>
-                        <button (click)="activeTool = 'SPLIT_ROWS'">Split rows</button>
-                        <button (click)="createTable()">Create Table</button>
+                        <button (click)="activeTool = 'SPLIT_COLS'">(1) Split cols</button>
+                        <button (click)="activeTool = 'SPLIT_ROWS'">(2) Split rows</button>
+                        <button (click)="activeTool = 'MERGE'">(3) Join cells</button>
+                        <button (click)="createTable()">(R) Reset</button>
+                        <button (click)="selectedTable = undefined">(ESC) Exit</button>
                     }
                     
-                    <button (click)="selectedTable = undefined">Exit</button>
                 } @else {
                     @if (activeTool) {
-                        <button (click)="activeTool = undefined">(C)ancel</button>
+                        <button (click)="activeTool = undefined">(ESC) Cancel</button>
                     } @else {
-                        <button (click)="activeTool = 'DRAW'">(C)reate</button>
+                        <button (click)="activeTool = 'DRAW_P'">(1) Paragraph</button>
+                        <button (click)="activeTool = 'DRAW_HEADER'">(2) Header</button>
+                        <button (click)="activeTool = 'DRAW_TABLE'">(3) Table</button>
                     }
                 }
             </div>
@@ -125,6 +127,7 @@ export class AppAnnotationToolComponent implements OnInit {
     pageNumber: string = '';
     imageUrl?: string
     annotations: Annotation[] = [];
+    history: Annotation[][] = []
     selectedTable?:Annotation
 
     @ViewChild("root") rootEl!: ElementRef<SVGSVGElement>;
@@ -133,16 +136,67 @@ export class AppAnnotationToolComponent implements OnInit {
     http = inject(HttpClient)
     loading = false;
     zoomLevel: number = 1;
-    activeLabel = "paragraph"
 
     private _zoomable?: Instance;
     private _rect?: SVGRectElement;
     private _line?: SVGLineElement;
     // TODO: Rewrite to active tool enum
-    private _activeTool?: ('DRAW' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
+    private _activeTool?: ('DRAW_P' | 'DRAW_HEADER' | 'DRAW_TABLE' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
 
     private _drawStartPoint: { x: number; y: number } = {x: 0, y: 0};
     protected _onDestroy$ = new Subject<void>();
+
+    @HostListener('document:keydown', ['$event'])
+    handleKeyboardEvent(event: KeyboardEvent) {
+        if (event.key === 'Escape' && (this.activeTool || this.selectedTable)) {
+            event.stopImmediatePropagation();
+            this.activeTool = undefined
+            this.selectedTable = undefined
+            return
+        }
+
+        // if (event.key === 'z' && (event.ctrlKey || event.metaKey)) {
+        if (event.key === 'z') {
+            // handle undo action
+            // first item on stack is current state
+            this.history.pop()
+            const previous = this.history.pop()
+            if (previous) {
+                this.annotations = previous
+                this._syncAnnotations()
+            }
+            event.stopImmediatePropagation()
+        }
+
+        if (this.selectedTable) {
+            // Handling table drawing keys
+            if (event.key === 'r') {
+                event.stopPropagation()
+                this.createTable()
+            } else if (event.key === '1') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'SPLIT_COLS'
+            } else  if (event.key === '2') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'SPLIT_ROWS'
+            } else if (event.key === '3') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'MERGE'
+            }
+        } else {
+            // Handling element drawing keys
+            if (event.key === '1') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'DRAW_P'
+            } else  if (event.key === '2') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'DRAW_HEADER'
+            } else if (event.key === '3') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'DRAW_TABLE'
+            }
+        }
+    }
 
     set activeTool(value) {
         this._activeTool = value;
@@ -152,10 +206,12 @@ export class AppAnnotationToolComponent implements OnInit {
             this._zoomable?.disablePan()
 
             switch (this._activeTool) {
-                case "DRAW":
-                    this.rootEl.nativeElement.removeEventListener('mousedown', this.drawRectToolStart);
-                    this.rootEl.nativeElement.removeEventListener('mousemove', this.drawRectToolMove);
-                    this.rootEl.nativeElement.removeEventListener('mouseup', this.drawRectToolEnd);
+                case "DRAW_P":
+                case "DRAW_HEADER":
+                case "DRAW_TABLE":
+                    this.rootEl.nativeElement.addEventListener('mousedown', this.drawRectToolStart, { passive: true });
+                    this.rootEl.nativeElement.addEventListener('mousemove', this.drawRectToolMove, { passive: true });
+                    this.rootEl.nativeElement.addEventListener('mouseup', this.drawRectToolEnd, { passive: true });
                     break
                 case "MERGE":
                     this.rootEl.nativeElement.addEventListener('mousedown', this.drawRectToolStart, { passive: true });
@@ -182,6 +238,19 @@ export class AppAnnotationToolComponent implements OnInit {
 
     get activeTool() {
         return this._activeTool;
+    }
+
+    get activeLabel() {
+        switch (this.activeTool) {
+            case "DRAW_P":
+                return "paragraph";
+            case "DRAW_TABLE":
+                return "table";
+            case "DRAW_HEADER":
+                return "header";
+            default:
+                return "other"
+        }
     }
 
     constructor(private elementRef: ElementRef, private _cd: ChangeDetectorRef) {
@@ -245,7 +314,9 @@ export class AppAnnotationToolComponent implements OnInit {
             const height = +this._rect.getAttribute("height")!
             if (width > minSize && height > minSize) {
                 switch (this.activeTool) {
-                    case "DRAW":
+                    case "DRAW_P":
+                    case "DRAW_HEADER":
+                    case "DRAW_TABLE":
                         this.annotations.push({
                             x0: +this._rect.getAttribute("x")!,
                             y0: +this._rect.getAttribute("y")!,
@@ -264,7 +335,7 @@ export class AppAnnotationToolComponent implements OnInit {
 
                         let toMerge:Annotation[] = []
                         for (let el of this.selectedTable!.table) {
-                            if (this.overlaps(el, x0, y0, x1, y1)) {
+                            if (this._overlaps(el, x0, y0, x1, y1)) {
                                 toMerge.push(el)
                             }
                         }
@@ -292,6 +363,8 @@ export class AppAnnotationToolComponent implements OnInit {
                 }
             }
         }
+        this._rect?.remove()
+        this._rect = undefined;
         this._syncAnnotations()
     };
 
@@ -373,6 +446,27 @@ export class AppAnnotationToolComponent implements OnInit {
         this._cd.markForCheck();
     };
 
+    createTable() {
+        this.selectedTable!.table = [{
+            x0: 0,
+            x1: this.selectedTable!.x1 - this.selectedTable!.x0,
+            y0: 0,
+            y1: this.selectedTable!.y1 - this.selectedTable!.y0,
+            table: [],
+            score: 1.0,
+            label: 'cell'
+        }]
+        this._syncAnnotations()
+    }
+
+    delete(segment: Annotation) {
+        const index = this.annotations.indexOf(segment)
+        if (index > -1) {
+            this.annotations.splice(index, 1)
+        }
+        this._syncAnnotations();
+    }
+
     private _clearFragments() {
         if (this._rect) {
             this._rect.remove()
@@ -429,6 +523,7 @@ export class AppAnnotationToolComponent implements OnInit {
             )
             .subscribe(annotations => {
                 this.annotations = annotations
+                this.history.push(this.annotations)
                 if (this.selectedTable) {
                     // We need to lookup the table again since after updating annotations, it's different set of objects.
                     this.selectedTable = this.annotations.find(a => a.x0 === this.selectedTable!.x0
@@ -442,28 +537,7 @@ export class AppAnnotationToolComponent implements OnInit {
             })
     }
 
-    createTable() {
-        this.selectedTable!.table = [{
-            x0: 0,
-            x1: this.selectedTable!.x1 - this.selectedTable!.x0,
-            y0: 0,
-            y1: this.selectedTable!.y1 - this.selectedTable!.y0,
-            table: [],
-            score: 1.0,
-            label: 'cell'
-        }]
-        this._syncAnnotations()
-    }
-
-    delete(segment: Annotation) {
-        const index = this.annotations.indexOf(segment)
-        if (index > -1) {
-            this.annotations.splice(index, 1)
-        }
-        this._syncAnnotations();
-    }
-
-    private overlaps(annotation: Annotation, x0: number, y0: number, x1: number, y1: number): boolean {
+    private _overlaps(annotation: Annotation, x0: number, y0: number, x1: number, y1: number): boolean {
         const xOverlap = Math.max(0, Math.min(annotation.x1 + this.selectedTable!.x0, x1) - Math.max(annotation.x0 + this.selectedTable!.x0, x0))
         const yOverlap = Math.max(0, Math.min(annotation.y1 + this.selectedTable!.y0, y1) - Math.max(annotation.y0 + this.selectedTable!.y0, y0))
         return (xOverlap * yOverlap) > 0
