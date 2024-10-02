@@ -1,15 +1,12 @@
 html {
-    background: #f2f2f2;
+    background: #f0f1f4;
 }
 
 body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding-top: 72px;
-    padding-left: 24px;
-    padding-right: 24px;
+    padding-top: 56px;
     height: 100vh;
 }
 
@@ -38,7 +35,8 @@ h1, h2, h3, h4, h5, h6, th {
 }
 
 a {
-    color: #644DED;
+    color: #222;
+    font-weight: 400;
 }
 
 
@@ -48,14 +46,19 @@ TABLE
 
 table.data-table {
     border: none;
-    margin-left: -24px;
-    margin-right: -24px;
+    background: white;
+    border-collapse: collapse;
 }
 
 table.data-table th, table.data-table td {
     border-top: 1px solid #EEEEF2;
     text-align: left;
     padding: 8px 16px;
+}
+
+table.data-table tr.htmx-swapping td {
+    opacity: 0;
+    transition: opacity 300s ease-out;
 }
 
 table.data-table tr:last-child {
@@ -66,6 +69,20 @@ table.data-table tr:last-child {
 
 table.data-table td > a {
     text-decoration: none;
+}
+
+/**
+BUTTONS
+ */
+.btn-icon {
+    display: flex;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.btn-icon img {
+    height: 14px;
+    width: auto;
 }
 
 /**
@@ -91,11 +108,11 @@ nav > a {
     text-decoration: none;
 }
 nav > a.active  {
-    color: #644DED;
+    color: #FC5621;
 }
 
 nav button.active {
-    color: #644DED;
+    color: #FC5621;
 }
 
 /**
@@ -141,10 +158,9 @@ FILE UPLOAD
 
 .box {
     position: relative;
-    outline: 2px dashed #AD9FFF;
-    background-color: rgba(100, 77, 237, 0.08);
+    outline: 2px dashed #ececec;
+    background: white;
     outline-offset: -10px;
-    border-radius: 10px;
 }
 
 .box__input {
@@ -158,8 +174,7 @@ FILE UPLOAD
 
 
 .box.is-dragover {
-    background-color: #E9E8FC;
-    outline-color: #644DED;
+    outline-color: #82add2;
 }
 
 .box__dragndrop,
@@ -169,12 +184,12 @@ FILE UPLOAD
 
 .box .box__dragndrop {
     display: inline;
-    color: #AD9FFF;
+    color: #82add2;
 }
 
 .box .box__icon {
     height: 20px;
-    fill: #AD9FFF;
+    fill: #82add2;
     display: block;
 }
 
@@ -193,39 +208,13 @@ FILE UPLOAD
     top: 50%;
     right: 0;
     left: 0;
-
-    -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
 }
 
 .box__success {
-    -webkit-animation: appear-from-inside .25s ease-in-out;
     animation: appear-from-inside .25s ease-in-out;
 }
 
-@-webkit-keyframes appear-from-inside {
-    from {
-        -webkit-transform: translateY(-50%) scale(0);
-    }
-    75% {
-        -webkit-transform: translateY(-50%) scale(1.1);
-    }
-    to {
-        -webkit-transform: translateY(-50%) scale(1);
-    }
-}
-
-@keyframes appear-from-inside {
-    from {
-        transform: translateY(-50%) scale(0);
-    }
-    75% {
-        transform: translateY(-50%) scale(1.1);
-    }
-    to {
-        transform: translateY(-50%) scale(1);
-    }
-}
 
 .box__file {
     width: 0.1px;
@@ -236,17 +225,17 @@ FILE UPLOAD
     z-index: -1;
 }
 
-.box__file + label {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    cursor: pointer;
-    display: inline-block;
-    overflow: hidden;
-    color: #644DED;
-}
+/*.box__file + label {*/
+/*    text-overflow: ellipsis;*/
+/*    white-space: nowrap;*/
+/*    cursor: pointer;*/
+/*    display: inline-block;*/
+/*    overflow: hidden;*/
+/*    color: #FC5621;*/
+/*}*/
 
 label > strong {
-    color: #AD9FFF;
+    color: #82add2;
 }
 
 .box__button {

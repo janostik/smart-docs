@@ -9,6 +9,8 @@ type Document struct {
 	UploadDate    time.Time
 	OcrRequired   bool
 	PageCount     int
+	InProgress    int
+	Validated     int
 	LocalFilePath string
 }
 

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"log"
 	"smart-docs/core/models"
+	"strings"
 )
 
 func UpdatePageCount(docId int64, pageCount int) error {
@@ -71,6 +72,18 @@ func LoadDocument(docId int64) (models.PendingDocument, error) {
 		return models.PendingDocument{}, err
 	}
 	return document, nil
+}
+
+func DeleteDocument(docId int64) error {
+	_, err := dbInstance.db.Exec(`delete from pages where document_id = ?`, docId)
+	if err != nil {
+		return err
+	}
+	_, err = dbInstance.db.Exec(`delete from documents where id = ?`, docId)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func NextPageToAnnotate(page *models.PageView) error {
@@ -158,7 +171,7 @@ func GetPredictions(docId int64, pageNum int) (string, error) {
 	return serialisedPredictions, nil
 }
 
-func GetPdfText(docId int64, pageNum int) ([]models.WordData, error) {
+func GetPdfPageText(docId int64, pageNum int) ([]models.WordData, error) {
 	var serialisedText string
 	err := dbInstance.db.QueryRow(`
 		select 
@@ -180,6 +193,42 @@ func GetPdfText(docId int64, pageNum int) ([]models.WordData, error) {
 	}
 
 	return words, nil
+}
+
+func GetPdfDocText(docId int64) (string, error) {
+	var pages []string
+	rows, err := dbInstance.db.Query(`
+    SELECT 
+        p.html
+    FROM documents doc
+    LEFT JOIN pages p ON doc.id = p.document_id
+    WHERE doc.id = ?
+`, docId)
+	if err != nil {
+		log.Println(fmt.Sprintf("query failed: %v", err))
+		return "", err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var html string
+		if err := rows.Scan(&html); err != nil {
+			log.Println(fmt.Sprintf("scan failed: %v", err))
+			return "", err
+		}
+		pages = append(pages, html)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Println(fmt.Sprintf("row iteration failed: %v", err))
+		return "", err
+	}
+	var b strings.Builder
+	for p, _ := range pages {
+		b.WriteString(fmt.Sprintf("\n<section page=\"%d\">\n%s\n</section>\n", p, pages[p]))
+	}
+
+	return b.String(), nil
 }
 
 func UpdateTrainingStatus(docId int64, pageNum int, status string) error {

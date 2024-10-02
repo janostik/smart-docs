@@ -32,6 +32,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/annotate/{documentId}/{pageNum}", s.AnnotatePage)
 	r.Post("/upload", s.UploadDocument)
 	r.Get("/document/{documentId}", s.LoadDocument)
+	r.Delete("/document/{documentId}", s.DeleteDocument)
+	r.Get("/document/{documentId}/content", s.LoadContent)
 	r.Patch("/document/{documentId}/{pageNum}/status/{newStatus}", s.UpdateStatus)
 	r.Get("/document/{documentId}/{pageNum}/predictions", s.GetPredictions)
 	r.Post("/document/{documentId}/{pageNum}/predictions", s.SetPredictions)
@@ -90,6 +92,21 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) DeleteDocument(w http.ResponseWriter, r *http.Request) {
+	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	err = db.DeleteDocument(docId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 func (s *Server) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
 	if err != nil {
@@ -117,6 +134,25 @@ func (s *Server) UpdateStatus(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+}
+
+func (s *Server) LoadContent(w http.ResponseWriter, r *http.Request) {
+	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	content, err := db.GetPdfDocText(docId)
+	if err != nil {
+		http.Error(w, "Failed to export document content", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8\n")
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write([]byte(content))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -245,7 +281,7 @@ func (s *Server) SetPredictions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	pdfText, err := db.GetPdfText(docId, pageNum)
+	pdfText, err := db.GetPdfPageText(docId, pageNum)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
