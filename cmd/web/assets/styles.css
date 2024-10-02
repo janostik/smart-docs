@@ -52,7 +52,7 @@ table.data-table {
     margin-right: -24px;
 }
 
-table.data-table th, td {
+table.data-table th, table.data-table td {
     border-top: 1px solid #EEEEF2;
     text-align: left;
     padding: 8px 16px;
@@ -106,20 +106,32 @@ section {
     flex-direction: row;
     gap: 16px;
     flex-wrap: nowrap;
+    align-items: start;
 }
 
 section > img {
     border-radius: 10px;
     width: 50%;
+    height: auto;
 }
 
 article {
     padding: 16px;
     max-width: 50%;
+    background: white;
+    border-radius: 10px;
 }
 
-article table td, article table th {
-    border: 1px solid black;
+article table {
+    border: 1px solid #EEEEF2;
+    border-collapse: collapse;
+    border-radius: 10px;
+}
+
+article table td {
+    border: 1px solid #EEEEF2;
+    padding: 4px 8px;
+    font-size: 14px;
 }
 
 

@@ -170,7 +170,7 @@ export class AppAnnotationToolComponent implements OnInit {
 
         if (this.selectedTable) {
             // Handling table drawing keys
-            if (event.key === 'r') {
+            if (event.key === 'r' && !event.metaKey) {
                 event.stopPropagation()
                 this.createTable()
             } else if (event.key === '1') {
@@ -307,7 +307,7 @@ export class AppAnnotationToolComponent implements OnInit {
     };
 
     drawRectToolEnd = ($event: MouseEvent) => {
-        const minSize = 10
+        const minSize = 5
         if (this._rect !== undefined) {
 
             const width = +this._rect.getAttribute("width")!

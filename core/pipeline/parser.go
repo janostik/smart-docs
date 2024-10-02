@@ -72,6 +72,12 @@ func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models
 		s.realign()
 	}
 
+	// TODO: Refactor to util funcs
+	yCmp := func(a, b Segment) int {
+		return cmp.Compare(a.Y0, b.Y0)
+	}
+	slices.SortFunc(segments, yCmp)
+
 	// TODO: Extract different renderers
 	var html = ""
 	for s, _ := range segments {
