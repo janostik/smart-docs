@@ -5,22 +5,32 @@
 {{- /*gotype: smart-docs/core/models.PageView*/ -}}
 <nav>
 
-    <a href="/">Documents</a>
+    <a href="/" class="active">Documents</a>
     /
-    <a href="/document/{{.Id}}" class="active">{{.DocumentName}}</a>
+    <span>{{.DocumentName}}</span>
+    /
+    <span>{{.PageNum}}</span>
 
     <div style="flex-grow: 1"></div>
 
-    <div>
+    <div style="display: flex; gap: 4px">
         {{if .HasPreviousPage}}
-            <a href="/document/{{.DocumentId}}?page={{.PreviousPage}}"> < </a>
+            <a id="previous" class="btn-icon" href="/document/{{.DocumentId}}?page={{.PreviousPage}}">
+                <img src="/assets/icons/chevron-left.svg" alt="Previous Page">
+            </a>
         {{else}}
-            <a disabled> < </a>
+            <a class="btn-icon" disabled>
+                <img src="/assets/icons/chevron-left.svg" alt="Previous Page">
+            </a>
         {{end}}
         {{if .HasNextPage}}
-            <a href="/document/{{.DocumentId}}?page={{.NextPage}}"> > </a>
+            <a id="next" class="btn-icon" href="/document/{{.DocumentId}}?page={{.NextPage}}">
+                <img src="/assets/icons/chevron-right.svg" alt="Next Page">
+            </a>
         {{else}}
-            <a disabled> > </a>
+            <a class="btn-icon" disabled>
+                <img src="/assets/icons/chevron-right.svg" alt="Next Page">
+            </a>
         {{end}}
     </div>
 
@@ -37,5 +47,21 @@
         {{.Html}}
     </article>
 {{ end }}
+
+<script>
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'ArrowLeft') {
+            const leftChevron = document.querySelector('a#previous');
+            if (leftChevron instanceof HTMLAnchorElement) {
+                leftChevron.click();
+            }
+        } else if (event.key === 'ArrowRight') {
+            const rightChevron = document.querySelector('a#next');
+            if (rightChevron instanceof HTMLAnchorElement) {
+                rightChevron.click();
+            }
+        }
+    });
+</script>
 </body>
 </html>

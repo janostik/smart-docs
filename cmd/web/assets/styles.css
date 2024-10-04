@@ -78,6 +78,12 @@ BUTTONS
     display: flex;
     cursor: pointer;
     padding: 4px;
+    align-items: center;
+}
+
+.btn-icon[disabled] {
+    opacity: .4;
+    cursor: unset;
 }
 
 .btn-icon img {
@@ -91,7 +97,7 @@ NAVIGATION
 nav {
     background: white;
     display: flex;
-    gap: 16px;
+    gap: 8px;
     padding: 16px 24px;
     position: fixed;
     width: 100%;

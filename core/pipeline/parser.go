@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const minOverlap = 0.4
+const minOverlap = 0.5
 
 type Segment struct {
 	*models.Prediction

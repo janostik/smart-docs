@@ -13,7 +13,7 @@ import {Annotation} from "./app-annotation-tool.component";
 
 const ANNOTATION_RESIZE_BOX_SIZE = 4;
 
-interface AnnotationBox {
+export interface AnnotationBox {
     point: DOMPoint;
     x0: number;
     y0: number;
@@ -21,7 +21,7 @@ interface AnnotationBox {
     y1: number;
 }
 
-enum Handle {
+export enum Handle {
     BR, BL, TL, TR
 }
 
@@ -31,8 +31,13 @@ enum Handle {
     imports: [],
     changeDetection: ChangeDetectionStrategy.OnPush,
     template: `
-        <svg class="svg-wrapper" (contextmenu)="rightClicked.emit(); $event.preventDefault()" [attr.x]="segment.x0" [attr.y]="segment.y0" [attr.width]="segment.x1 - segment.x0"
-             [attr.height]="segment.y1 - segment.y0" (dblclick)="selectIfTable()">
+        <svg class="svg-wrapper" 
+             (contextmenu)="rightClicked.emit(); $event.preventDefault()" 
+             [attr.x]="offsetX + segment.x0" 
+             [attr.y]="offsetY + segment.y0" 
+             [attr.width]="segment.x1 - segment.x0"
+             [attr.height]="segment.y1 - segment.y0"
+             (dblclick)="selectIfTable()">
 
             @if (segment.label === 'table') {
                 <g>
@@ -109,6 +114,9 @@ enum Handle {
 })
 export class AppAnnotationComponent implements OnInit, AfterViewInit {
 
+    @Input() offsetX = 0
+    @Input() offsetY = 0
+
     @Input({required: true}) id!: number;
     @Input({alias: "rootEl", required: true}) root!: SVGSVGElement;
     @Input({alias: "viewPortEl", required: true}) viewport!: SVGGElement;
@@ -116,7 +124,7 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
 
     @Output() tableSelected = new EventEmitter<MouseEvent>();
     @Output() rightClicked = new EventEmitter<void>();
-    @Output() segmentPositionChanged = new EventEmitter<void>();
+    @Output() segmentPositionChanged = new EventEmitter<{handle: Handle, start: AnnotationBox, end: Annotation}>();
 
     @ViewChild("rect") rect!: ElementRef<SVGRectElement>;
     @ViewChild("handleTL") handleTL!: ElementRef<SVGRectElement>;
@@ -149,6 +157,7 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
         // color scheme taken from: https://teenage.engineering/guides/od-11
         switch (this.segment?.label) {
             case "table":
+            case "cell":
                 return "#fbb03b"
             case "header":
                 return "#c1272d"
@@ -216,6 +225,7 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
                     // changedPosition.height = minBox(start.height - diff.y);
                     break;
             }
+            // TODO: Clamp to min/max width
             this.segment.x0 = changedPosition.x0
             this.segment.x1 = changedPosition.x1
             this.segment.y0 = changedPosition.y0
@@ -230,7 +240,11 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
         this.isResizing = false;
         this.root.removeEventListener('mousemove', this.resizeMove);
         this.root.removeEventListener('mouseup', this.resizeEnd);
-        this.segmentPositionChanged.emit();
+        this.segmentPositionChanged.emit({
+            handle: this._resizeHandle!,
+            start: this._resizeStartBox!,
+            end: this.segment
+        });
         this._cd.markForCheck();
     };
 

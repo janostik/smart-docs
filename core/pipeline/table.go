@@ -21,6 +21,10 @@ func (s *Segment) ParseTable() [][]Cell {
 
 	var cells []Cell
 	for _, p := range s.Prediction.Table {
+		if p.X0 > p.X1 || p.Y0 > p.Y1 || p.X0 < 0 || p.Y0 < 0 {
+			// Skip invalid cells
+			continue
+		}
 		cells = append(cells, Cell{
 			Prediction: &p,
 		})

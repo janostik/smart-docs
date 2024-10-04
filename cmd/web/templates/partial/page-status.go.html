@@ -9,15 +9,17 @@
         </button>
         <button hx-patch="/document/{{.DocumentId}}/{{.PageNum}}/status/TRAINING"
                 hx-target="closest div"
+                hx-trigger="click, keydown[shiftKey&&key=='T'] from:body"
                 class="{{if eq .Status "TRAINING"}}active{{end}}"
         >
-            Training
+            Training (Shift+T)
         </button>
         <button hx-patch="/document/{{.DocumentId}}/{{.PageNum}}/status/VALIDATION"
                 hx-target="closest div"
+                hx-trigger="click, keydown[shiftKey&&key=='D'] from:body"
                 class="{{if eq .Status "VALIDATION"}}active{{end}}"
         >
-            Validation
+            Validation (Shift+D)
         </button>
     </div>
 {{end}}

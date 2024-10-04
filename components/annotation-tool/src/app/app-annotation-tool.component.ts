@@ -1,10 +1,9 @@
 import {ChangeDetectorRef, Component, ElementRef, HostListener, inject, OnInit, ViewChild} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {Subject, takeUntil} from "rxjs";
-import {AppAnnotationComponent} from "./app-annotation.component";
+import {AnnotationBox, AppAnnotationComponent, Handle} from "./app-annotation.component";
 
 import svgPanZoom from "svg-pan-zoom";
-import {AppAnnotationCellComponent} from "./app-annotation-cell.component";
 import Instance = SvgPanZoom.Instance;
 
 export interface Annotation {
@@ -22,7 +21,6 @@ export interface Annotation {
     standalone: true,
     imports: [
         AppAnnotationComponent,
-        AppAnnotationCellComponent,
     ],
     template: `
         @if (imageUrl) {
@@ -46,10 +44,17 @@ export interface Annotation {
                                clip-path="url(#clip)"></image>
 
                         @for (segment of selectedTable.table; track segment; let index = $index) {
-                            <svg:g app-annotation-cell [id]="index"
+                            <svg:g app-annotation [id]="index"
                                    [attr.id]="'el-' + index"
+                                   [offsetX]="selectedTable.x0"
+                                   [offsetY]="selectedTable.y0"
                                    [segment]="segment"
-                                   [parent]="selectedTable"
+                                   [rootEl]="rootEl.nativeElement"
+                                   [viewPortEl]="viewportEl.nativeElement"
+                                   (mouseover)="highlightedSegment = segment"
+                                   (mouseout)="highlightedSegment = undefined"
+                                   (rightClicked)="deleteCell(segment)"
+                                   (segmentPositionChanged)="onPositionChanged($event)"
                             />
                         }
                     } @else {
@@ -75,23 +80,24 @@ export interface Annotation {
 
             <div class="floating">
                 @if (selectedTable) {
+                    <button [class.active]="activeTool == 'SPLIT_COLS'" (click)="activeTool = 'SPLIT_COLS'">(1) Split cols</button>
+                    <button [class.active]="activeTool == 'SPLIT_ROWS'" (click)="activeTool = 'SPLIT_ROWS'">(2) Split rows</button>
+                    <button [class.active]="activeTool == 'MERGE'" (click)="activeTool = 'MERGE'">(3) Join cells</button>
+                    <button (click)="createTable()">(R) Reset</button>
+                    
                     @if (activeTool) {
                         <button (click)="activeTool = undefined">(ESC) Cancel</button>
                     } @else {
-                        <button (click)="activeTool = 'SPLIT_COLS'">(1) Split cols</button>
-                        <button (click)="activeTool = 'SPLIT_ROWS'">(2) Split rows</button>
-                        <button (click)="activeTool = 'MERGE'">(3) Join cells</button>
-                        <button (click)="createTable()">(R) Reset</button>
                         <button (click)="selectedTable = undefined">(ESC) Exit</button>
                     }
                     
                 } @else {
+                    <button [class.active]="activeTool == 'DRAW_P'" (click)="activeTool = 'DRAW_P'">(1) Paragraph</button>
+                    <button [class.active]="activeTool == 'DRAW_HEADER'" (click)="activeTool = 'DRAW_HEADER'">(2) Header</button>
+                    <button [class.active]="activeTool == 'DRAW_TABLE'" (click)="activeTool = 'DRAW_TABLE'">(3) Table</button>
+                    
                     @if (activeTool) {
                         <button (click)="activeTool = undefined">(ESC) Cancel</button>
-                    } @else {
-                        <button (click)="activeTool = 'DRAW_P'">(1) Paragraph</button>
-                        <button (click)="activeTool = 'DRAW_HEADER'">(2) Header</button>
-                        <button (click)="activeTool = 'DRAW_TABLE'">(3) Table</button>
                     }
                 }
             </div>
@@ -136,21 +142,38 @@ export class AppAnnotationToolComponent implements OnInit {
     http = inject(HttpClient)
     loading = false;
     zoomLevel: number = 1;
+    highlightedSegment?: Annotation;
 
     private _zoomable?: Instance;
     private _rect?: SVGRectElement;
     private _line?: SVGLineElement;
-    // TODO: Rewrite to active tool enum
-    private _activeTool?: ('DRAW_P' | 'DRAW_HEADER' | 'DRAW_TABLE' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
 
+    private _activeTool?: ('DRAW_P' | 'DRAW_HEADER' | 'DRAW_TABLE' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
     private _drawStartPoint: { x: number; y: number } = {x: 0, y: 0};
-    protected _onDestroy$ = new Subject<void>();
+    private _onDestroy$ = new Subject<void>();
+    private _shiftPressed: boolean = false;
+
+    @HostListener('document:keyup', ['$event'])
+    handleKeyUp(event: KeyboardEvent) {
+        if (!event.shiftKey) {
+            this._shiftPressed = false;
+        }
+    }
 
     @HostListener('document:keydown', ['$event'])
-    handleKeyboardEvent(event: KeyboardEvent) {
-        if (event.key === 'Escape' && (this.activeTool || this.selectedTable)) {
+    handleKeyDown(event: KeyboardEvent) {
+        if (event.shiftKey) {
+            this._shiftPressed = true;
+        }
+
+        if (event.key === 'Escape' && this.activeTool) {
             event.stopImmediatePropagation();
             this.activeTool = undefined
+            return
+        }
+
+        if (event.key === 'Escape' && this.selectedTable) {
+            event.stopImmediatePropagation();
             this.selectedTable = undefined
             return
         }
@@ -273,7 +296,50 @@ export class AppAnnotationToolComponent implements OnInit {
             })
     }
 
-    onPositionChanged() {
+    onPositionChanged(event?: {handle: Handle, start: AnnotationBox, end: Annotation}) {
+        if (event && this._shiftPressed) {
+            let xStart, yStart, xEnd, yEnd;
+            switch (event.handle) {
+                case Handle.TL:
+                    xStart = event.start.x0
+                    xEnd = event.end.x0
+                    yStart = event.start.y0
+                    yEnd = event.end.y0
+                    break
+                case Handle.TR:
+                    xStart = event.start.x1
+                    xEnd = event.end.x1
+                    yStart = event.start.y0
+                    yEnd = event.end.y0
+                    break
+                case Handle.BL:
+                    xStart = event.start.x0
+                    xEnd = event.end.x0
+                    yStart = event.start.y1
+                    yEnd = event.end.y1
+                    break
+                case Handle.BR:
+                    xStart = event.start.x1
+                    xEnd = event.end.x1
+                    yStart = event.start.y1
+                    yEnd = event.end.y1
+                    break
+            }
+            for (let ann of this.selectedTable!.table) {
+                if (ann.x0 == xStart) {
+                    ann.x0 = xEnd
+                }
+                if (ann.x1 == xStart) {
+                    ann.x1 = xEnd
+                }
+                if (ann.y0 == yStart) {
+                    ann.y0 = yEnd
+                }
+                if (ann.y1 == yStart) {
+                    ann.y1 = yEnd
+                }
+            }
+        }
         this._syncAnnotations()
     }
 
@@ -402,10 +468,14 @@ export class AppAnnotationToolComponent implements OnInit {
         }
 
         const toSplit:Annotation[] = []
-        for (let ann of this.selectedTable!.table) {
-            if (overlaps(ann, p)) {
-                toSplit.push(ann)
+        if (this._shiftPressed) {
+            for (let ann of this.selectedTable!.table) {
+                if (overlaps(ann, p)) {
+                    toSplit.push(ann)
+                }
             }
+        } else {
+            toSplit.push(this.highlightedSegment!)
         }
 
         for (let ann of toSplit) {
@@ -423,20 +493,22 @@ export class AppAnnotationToolComponent implements OnInit {
             this._line = document.createElementNS('http://www.w3.org/2000/svg', 'line')
             this._line.setAttribute("stroke", `rgba(130, 150, 167, 1)`)
             this._line.setAttribute("fill", `rgba(130, 150, 167, 0.65)`)
+            this._line.style.pointerEvents = "none"
             this.viewportEl.nativeElement.appendChild(this._line)
         }
+        const hoveredSegment = this.highlightedSegment;
         switch (this._activeTool) {
             case "SPLIT_ROWS":
-                this._line?.setAttribute("x1", "0")
-                this._line?.setAttribute("x2", `${this.width}`)
+                this._line?.setAttribute("x1", !this._shiftPressed && !!hoveredSegment ? `${this.selectedTable!.x0 + hoveredSegment.x0}` : "0")
+                this._line?.setAttribute("x2", !this._shiftPressed && !!hoveredSegment ? `${this.selectedTable!.x0 + hoveredSegment.x1}` : `${this.width}`)
                 this._line?.setAttribute("y1", `${p.y}`)
                 this._line?.setAttribute("y2", `${p.y}`)
                 break
             case "SPLIT_COLS":
                 this._line?.setAttribute("x1", `${p.x}`)
                 this._line?.setAttribute("x2", `${p.x}`)
-                this._line?.setAttribute("y1", "0")
-                this._line?.setAttribute("y2", `${this.height}`)
+                this._line?.setAttribute("y1", !this._shiftPressed && !!hoveredSegment ? `${this.selectedTable!.y0 + hoveredSegment.y0}` : "0")
+                this._line?.setAttribute("y2", !this._shiftPressed && !!hoveredSegment ? `${this.selectedTable!.y0 + hoveredSegment.y1}` : `${this.height}`)
                 break
         }
         this._line?.setAttribute("stroke-width", "1")
@@ -463,6 +535,14 @@ export class AppAnnotationToolComponent implements OnInit {
         const index = this.annotations.indexOf(segment)
         if (index > -1) {
             this.annotations.splice(index, 1)
+        }
+        this._syncAnnotations();
+    }
+
+    deleteCell(segment: Annotation) {
+        const index = this.selectedTable!.table.indexOf(segment)
+        if (index > -1) {
+            this.selectedTable?.table.splice(index, 1)
         }
         this._syncAnnotations();
     }
