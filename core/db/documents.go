@@ -11,11 +11,12 @@ func ListDocuments() ([]models.Document, error) {
 			    d.id, 
 			    d.name,
 			    d.upload_date,
+			    d.status,
 			    count(p.id) as page_count,
 				COUNT(CASE WHEN p.status = 'VALIDATION' THEN 1 END) AS validated_count,
 				COUNT(CASE WHEN p.status = 'TRAINING' THEN 1 END) AS in_progress_count
 			from documents d
-				join pages p on d.id = p.document_id
+				left join pages p on d.id = p.document_id
 			group by d.id, d.name, d.upload_date
 			order by upload_date desc`)
 	if err != nil {
@@ -24,7 +25,7 @@ func ListDocuments() ([]models.Document, error) {
 	var documents []models.Document
 	for rows.Next() {
 		var doc models.Document
-		err := rows.Scan(&doc.Id, &doc.Name, &doc.UploadDate, &doc.PageCount, &doc.Validated, &doc.InProgress)
+		err := rows.Scan(&doc.Id, &doc.Name, &doc.UploadDate, &doc.Status, &doc.PageCount, &doc.Validated, &doc.InProgress)
 		if err != nil {
 			return nil, err
 		}
@@ -37,6 +38,27 @@ func ListDocuments() ([]models.Document, error) {
 	}
 
 	return documents, nil
+}
+
+func LoadDocument(docId int64) (models.Document, error) {
+	var doc models.Document
+	err := dbInstance.db.QueryRow(`
+			select 
+			    d.id, 
+			    d.name,
+			    d.upload_date,
+			    d.status,
+			    count(p.id) as page_count,
+				COUNT(CASE WHEN p.status = 'VALIDATION' THEN 1 END) AS validated_count,
+				COUNT(CASE WHEN p.status = 'TRAINING' THEN 1 END) AS in_progress_count
+			from documents d
+				left join pages p on d.id = p.document_id
+			where d.id = ?
+			group by d.id, d.name, d.upload_date`, docId).Scan(&doc.Id, &doc.Name, &doc.UploadDate, &doc.Status, &doc.PageCount, &doc.Validated, &doc.InProgress)
+	if err != nil {
+		return doc, err
+	}
+	return doc, nil
 }
 
 func StoreDocument(doc *models.Document) (int64, error) {

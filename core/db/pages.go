@@ -55,25 +55,6 @@ func StorePages(pages *[]models.Page) error {
 	return nil
 }
 
-func LoadDocument(docId int64) (models.PendingDocument, error) {
-	var document models.PendingDocument
-	err := dbInstance.db.QueryRow(`
-		select 
-		    doc.id, 
-		    doc.name, 
-		    doc.status 
-		from documents doc where doc.id = ?
-	`, docId).Scan(
-		&document.Id,
-		&document.Name,
-		&document.Status,
-	)
-	if err != nil {
-		return models.PendingDocument{}, err
-	}
-	return document, nil
-}
-
 func DeleteDocument(docId int64) error {
 	_, err := dbInstance.db.Exec(`delete from pages where document_id = ?`, docId)
 	if err != nil {
@@ -193,6 +174,34 @@ func GetPdfPageText(docId int64, pageNum int) ([]models.WordData, error) {
 	}
 
 	return words, nil
+}
+
+func GetNonValidatedPages(docId int64) ([]int, error) {
+	var pages []int
+	rows, err := dbInstance.db.Query(`
+		select page_num from pages where status != 'VALIDATION' and document_id = ?;
+	`, docId)
+	if err != nil {
+		log.Println(fmt.Sprintf("query failed: %v", err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var pageNum int
+		err := rows.Scan(&pageNum)
+		if err != nil {
+			log.Println(fmt.Sprintf("Query for fetching unvalidated rows failed: %v", err))
+			return nil, err
+		}
+		pages = append(pages, pageNum)
+	}
+	// Why is it needed?
+	if err := rows.Err(); err != nil {
+		log.Println(fmt.Sprintf("row iteration failed: %v", err))
+		return nil, err
+	}
+	return pages, nil
 }
 
 func GetPdfDocText(docId int64) (string, error) {

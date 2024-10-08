@@ -34,6 +34,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/document/{documentId}", s.LoadDocument)
 	r.Delete("/document/{documentId}", s.DeleteDocument)
 	r.Get("/document/{documentId}/content", s.LoadContent)
+	r.Put("/document/{documentId}/retry", s.RetryAnnotations)
 	r.Patch("/document/{documentId}/{pageNum}/status/{newStatus}", s.UpdateStatus)
 	r.Get("/document/{documentId}/{pageNum}/predictions", s.GetPredictions)
 	r.Post("/document/{documentId}/{pageNum}/predictions", s.SetPredictions)
@@ -44,6 +45,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		"./cmd/web/templates/document.go.html",
 		"./cmd/web/templates/document-loading.go.html",
 		"./cmd/web/templates/partial/head.go.html",
+		"./cmd/web/templates/partial/document-row.go.html",
 		"./cmd/web/templates/partial/page-status.go.html",
 	))
 
@@ -70,25 +72,35 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if doc.Status != "PROCESSING" {
-		var pageView models.PageView
-		err = db.LoadPage(docId, pageNum, &pageView)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 
-		err = tmpl.ExecuteTemplate(w, "document.go.html", pageView)
+	if r.Header.Get("hx-request") == "true" {
+		err = tmpl.ExecuteTemplate(w, "document-row.go.html", doc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+
 		}
-	} else {
+		return
+	}
+
+	if doc.Status == "PROCESSING" {
 		err = tmpl.ExecuteTemplate(w, "document-loading.go.html", doc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
 		}
+		return
+	}
+
+	var pageView models.PageView
+	err = db.LoadPage(docId, pageNum, &pageView)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.ExecuteTemplate(w, "document.go.html", pageView)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -213,7 +225,7 @@ func (s *Server) ListDocuments(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) NextPageToAnnotate(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) NextPageToAnnotate(w http.ResponseWriter, r *http.Request) {
 	var page models.PageView
 	err := db.NextPageToAnnotate(&page)
 	if err != nil {
@@ -221,20 +233,13 @@ func (s *Server) NextPageToAnnotate(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 
-	err = tmpl.ExecuteTemplate(w, "annotate.go.html", page)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	http.Redirect(w, r, fmt.Sprintf("/annotate/%d/%d", page.DocumentId, page.PageNum), 301)
 }
 
 func (s *Server) AnnotatePage(w http.ResponseWriter, r *http.Request) {
 	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
 	pageNum, err := strconv.Atoi(chi.URLParam(r, "pageNum"))
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
+
 	var page models.PageView
 	err = db.LoadPage(docId, pageNum, &page)
 	if err != nil {
@@ -298,10 +303,31 @@ func (s *Server) SetPredictions(w http.ResponseWriter, r *http.Request) {
 	jsonResp, err := json.Marshal(predictions)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	_, err = w.Write(jsonResp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+}
+
+func (s *Server) RetryAnnotations(w http.ResponseWriter, r *http.Request) {
+	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	pipeline.RetryAnnotations(docId)
+
+	doc, err := db.LoadDocument(docId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = tmpl.ExecuteTemplate(w, "document-row.go.html", doc)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 }
 

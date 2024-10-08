@@ -13,9 +13,3 @@ type Document struct {
 	Validated     int
 	LocalFilePath string
 }
-
-type PendingDocument struct {
-	Id     int64
-	Name   string
-	Status string
-}

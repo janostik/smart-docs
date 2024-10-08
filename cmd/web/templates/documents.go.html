@@ -41,35 +41,9 @@
         </th>
     </tr>
     </thead>
-    <tbody hx-confirm="Are you sure? You will loose all training data" hx-target="closest tr" hx-swap="outerHTML swap:300ms">
+    <tbody>
     {{range . }}
-        <tr>
-            <td>
-                <a href="/document/{{.Id}}">{{.Name}}</a>
-            </td>
-            <td>
-                {{.UploadDate}}
-            </td>
-            <td>
-                {{.PageCount}}
-            </td>
-            <td>
-                {{.InProgress}}
-            </td>
-            <td>
-                {{.Validated}}
-            </td>
-            <td>
-                <div style="display: flex; gap: 4px">
-                    <a class="btn-icon" href="/document/{{.Id}}/content" download="{{.Name}}.html">
-                        <img src="/assets/icons/download.svg">
-                    </a>
-                    <a class="btn-icon" hx-delete="/document/{{.Id}}">
-                        <img src="/assets/icons/trash.svg">
-                    </a>
-                </div>
-            </td>
-        </tr>
+        {{template "document-row" .}}
     {{end}}
 
     </tbody>
