@@ -16,6 +16,8 @@ export interface Annotation {
     table: Annotation[]
 }
 
+const MIN_SIZE = 5;
+
 @Component({
     selector: 'app-annotation-tool',
     standalone: true,
@@ -221,6 +223,31 @@ export class AppAnnotationToolComponent implements OnInit {
         }
     }
 
+    get cleanedAnnotations() {
+        return this.annotations
+            .filter(a => {
+                if (!this._isValid(a)) {
+                    return false
+                }
+                if (a.table?.length > 0) {
+                    a.table = a.table.filter(a => this._isValid(a))
+                }
+                return true
+            })
+    }
+
+    private _isValid(a: Annotation) {
+        if (a.x0 > a.x1 || a.y0 > a.y1) {
+            // Invalid shape
+            return false
+        }
+        if (a.x1 - a.x0 < MIN_SIZE || a.y1 - a.y0 < MIN_SIZE) {
+            // too small
+            return false
+        }
+        return true
+    }
+
     set activeTool(value) {
         this._activeTool = value;
         this._clearFragments();
@@ -373,12 +400,11 @@ export class AppAnnotationToolComponent implements OnInit {
     };
 
     drawRectToolEnd = ($event: MouseEvent) => {
-        const minSize = 5
         if (this._rect !== undefined) {
 
             const width = +this._rect.getAttribute("width")!
             const height = +this._rect.getAttribute("height")!
-            if (width > minSize && height > minSize) {
+            if (width > MIN_SIZE && height > MIN_SIZE) {
                 switch (this.activeTool) {
                     case "DRAW_P":
                     case "DRAW_HEADER":
@@ -597,7 +623,7 @@ export class AppAnnotationToolComponent implements OnInit {
     private _syncAnnotations() {
         this.loading = true;
         this.http
-            .post<Annotation[]>(`/document/${this.documentId}/${this.pageNumber}/predictions`, this.annotations)
+            .post<Annotation[]>(`/document/${this.documentId}/${this.pageNumber}/predictions`, this.cleanedAnnotations)
             .pipe(
                 takeUntil(this._onDestroy$)
             )
