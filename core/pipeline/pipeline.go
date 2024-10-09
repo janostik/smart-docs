@@ -38,13 +38,13 @@ func ProcessPdf(docId int64) {
 		// TODO: Update pages with OCR
 		page.OcrText = ""
 		predictions, err := RunDetectionOnPage(docId, p)
-		drawBoundingBoxes(docId, p, &predictions, "original")
+		DrawBoundingBoxes(docId, p, &predictions, "original")
 		if err != nil {
 			log.Println(fmt.Sprintf("Error detecting segments: \n%+v", err))
 			return
 		}
 		page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions)
-		drawBoundingBoxes(docId, p, &predictions, "prediction")
+		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		page.Predictions = predictions
 	}
 
@@ -61,7 +61,7 @@ func ProcessPdf(docId int64) {
 	}
 }
 
-func drawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, suffix string) {
+func DrawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, suffix string) {
 	imgFile, err := os.Open(fmt.Sprintf("cmd/web/assets/images/%d/%d.jpg", docId, page))
 	if err != nil {
 		log.Panicln(fmt.Sprintf("Cannot open image: \n%+v", err))
@@ -139,7 +139,7 @@ func RetryAnnotations(docId int64) {
 func reprocessPages(docId int64, pages []int) {
 	for _, p := range pages {
 		predictions, err := RunDetectionOnPage(docId, p)
-		drawBoundingBoxes(docId, p, &predictions, "original")
+		DrawBoundingBoxes(docId, p, &predictions, "original")
 		if err != nil {
 			log.Println(fmt.Sprintf("Error detecting segments: \n%+v", err))
 			return
@@ -150,7 +150,7 @@ func reprocessPages(docId int64, pages []int) {
 			return
 		}
 		html := ParseHtmlAndAdjustDetection(&words, &predictions)
-		drawBoundingBoxes(docId, p, &predictions, "prediction")
+		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		err = db.UpdatePredictionsAndText(docId, p, &predictions, &html)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error updating document predictions and text: \n%+v", err))

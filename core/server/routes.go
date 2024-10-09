@@ -294,6 +294,7 @@ func (s *Server) SetPredictions(w http.ResponseWriter, r *http.Request) {
 	}
 	var htmlText = pipeline.ParseHtmlAndAdjustDetection(&pdfText, &predictions)
 	err = db.UpdatePredictionsAndText(docId, pageNum, &predictions, &htmlText)
+	pipeline.DrawBoundingBoxes(docId, pageNum, &predictions, "prediction")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
