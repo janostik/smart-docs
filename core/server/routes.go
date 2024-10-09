@@ -233,7 +233,8 @@ func (s *Server) NextPageToAnnotate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, fmt.Sprintf("/annotate/%d/%d", page.DocumentId, page.PageNum), 301)
+	r.Header.Add("Cache-Control", "no-store")
+	http.Redirect(w, r, fmt.Sprintf("/annotate/%d/%d", page.DocumentId, page.PageNum), 307)
 }
 
 func (s *Server) AnnotatePage(w http.ResponseWriter, r *http.Request) {

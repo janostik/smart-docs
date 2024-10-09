@@ -234,6 +234,12 @@ export class AppAnnotationToolComponent implements OnInit {
                 }
                 return true
             })
+            .map(a => {
+                if (a.table?.length > 0) {
+                    a.table = a.table.map(t => ({...t, label: "cell"}))
+                }
+                return a
+            })
     }
 
     private _isValid(a: Annotation) {

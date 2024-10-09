@@ -12,6 +12,10 @@
     <span>{{.PageNum}}</span>
 
     <div style="flex-grow: 1"></div>
+    <a id="nextDocumentLink" href="/annotate/{{.DocumentId}}/{{.PageNum}}">
+        Annotate
+    </a>
+    <div style="flex-grow: 1"></div>
 
     <div style="display: flex; gap: 4px">
         {{if .HasPreviousPage}}

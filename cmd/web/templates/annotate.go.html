@@ -9,6 +9,13 @@
     <a href="/">Documents</a>
     <a href="/annotate" class="active">Annotate Docs</a>
     <div style="flex-grow: 1"></div>
+    <a id="nextDocumentLink" href="/annotate">
+        Next To Annotate (shift + enter)
+    </a>
+    <a href="/document/{{.DocumentId}}?page={{.PageNum}}">
+        View
+    </a>
+    <div style="flex-grow: 1"></div>
 
     {{template "page-status" . }}
 </nav>
@@ -17,5 +24,18 @@
         document-id="{{.DocumentId}}"
         page-number="{{.PageNum}}"
 ></app-annotation-tool>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const link = document.getElementById('nextDocumentLink');
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter' && event.shiftKey) {
+                event.preventDefault(); // Prevent default Enter key behavior
+                window.location.href = link.getAttribute('href');
+            }
+        });
+    });
+</script>
 </body>
 </html>
