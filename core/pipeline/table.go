@@ -143,6 +143,8 @@ func (s *Segment) ParseTable() [][]Cell {
 		if len(row) == maxCols {
 			for c := range maxCols {
 				cell := row[c]
+				// TODO: This is a bug. The row with most cells doesn't have all columns
+				// To replicate. http://localhost:8080/annotate/29/301
 				if xGrid[c] == 0 {
 					xGrid[c] = cell.OffsetStart
 				} else {

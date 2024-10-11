@@ -5,6 +5,7 @@ import {AnnotationBox, AppAnnotationComponent, Handle} from "./app-annotation.co
 
 import svgPanZoom from "svg-pan-zoom";
 import Instance = SvgPanZoom.Instance;
+import {TooltipDirective} from "./app-tooltip.directive";
 
 export interface Annotation {
     score: number,
@@ -23,6 +24,7 @@ const MIN_SIZE = 5;
     standalone: true,
     imports: [
         AppAnnotationComponent,
+        TooltipDirective,
     ],
     template: `
         @if (imageUrl) {
@@ -50,6 +52,8 @@ const MIN_SIZE = 5;
                                    [attr.id]="'el-' + index"
                                    [offsetX]="selectedTable.x0"
                                    [offsetY]="selectedTable.y0"
+                                   [sizeLimitX]="selectedTable.x1 - selectedTable.x0"
+                                   [sizeLimitY]="selectedTable.y1 - selectedTable.y0"
                                    [segment]="segment"
                                    [rootEl]="rootEl.nativeElement"
                                    [viewPortEl]="viewportEl.nativeElement"
@@ -79,30 +83,76 @@ const MIN_SIZE = 5;
                     }
                 </g>
             </svg>
+            
+            @if (selectedTable) {
+                <div class="btn-row">
 
-            <div class="floating">
-                @if (selectedTable) {
-                    <button [class.active]="activeTool == 'SPLIT_COLS'" (click)="activeTool = 'SPLIT_COLS'">(1) Split cols</button>
-                    <button [class.active]="activeTool == 'SPLIT_ROWS'" (click)="activeTool = 'SPLIT_ROWS'">(2) Split rows</button>
-                    <button [class.active]="activeTool == 'MERGE'" (click)="activeTool = 'MERGE'">(3) Join cells</button>
-                    <button (click)="createTable()">(R) Reset</button>
+                    <button (click)="selectedTable = undefined" appTooltip="Stop Annotating Tables">
+                        <img src="/assets/icons/editor/exit.svg" style="transform: rotate(180deg)" alt="Stop Annotating Tables">
+                        <span>(ESC)</span>
+                    </button>
                     
-                    @if (activeTool) {
-                        <button (click)="activeTool = undefined">(ESC) Cancel</button>
-                    } @else {
-                        <button (click)="selectedTable = undefined">(ESC) Exit</button>
-                    }
+                    <div class="delimiter"></div>
                     
-                } @else {
-                    <button [class.active]="activeTool == 'DRAW_P'" (click)="activeTool = 'DRAW_P'">(1) Paragraph</button>
-                    <button [class.active]="activeTool == 'DRAW_HEADER'" (click)="activeTool = 'DRAW_HEADER'">(2) Header</button>
-                    <button [class.active]="activeTool == 'DRAW_TABLE'" (click)="activeTool = 'DRAW_TABLE'">(3) Table</button>
-                    
-                    @if (activeTool) {
-                        <button (click)="activeTool = undefined">(ESC) Cancel</button>
-                    }
-                }
-            </div>
+                    <button [class.active]="activeTool == 'SPLIT_COLS'" appTooltip="Split Columns" (click)="activeTool ? activeTool = undefined : activeTool = 'SPLIT_COLS'">
+                        <img src="/assets/icons/editor/table-columns.svg" alt="Split Columns">
+                        @if (activeTool && activeTool == 'SPLIT_COLS') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(1)</span>
+                        }
+                    </button>
+                    <button [class.active]="activeTool == 'SPLIT_ROWS'" appTooltip="Split Rows" (click)="activeTool ? activeTool = undefined : activeTool = 'SPLIT_ROWS'">
+                        <img src="/assets/icons/editor/table-rows.svg" alt="Split Rows">
+                        @if (activeTool && activeTool == 'SPLIT_ROWS') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(2)</span>
+                        }
+                    </button>
+                    <button [class.active]="activeTool == 'MERGE'" appTooltip="Join Cells" (click)="activeTool ? activeTool = undefined : activeTool = 'MERGE'">
+                        <img src="/assets/icons/editor/object-union.svg" alt="Join Cells">
+                        @if (activeTool && activeTool == 'MERGE') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(3)</span>
+                        }
+                    </button>
+                    <button (click)="createTable()" appTooltip="Reset and Create New" >
+                        <img src="/assets/icons/editor/square-plus.svg" alt="Reset and Create New">
+                        <span>(R)</span>
+                    </button>
+                </div>
+                
+                
+            } @else {
+                <div class="btn-row">
+                    <button [class.active]="activeTool == 'DRAW_P'" appTooltip="Draw Paragraph" (click)="activeTool ? activeTool = undefined : activeTool = 'DRAW_P'">
+                        <img src="/assets/icons/editor/paragraph.svg" alt="Draw Paragraph">
+                        @if (activeTool && activeTool == 'DRAW_P') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(1)</span>
+                        }
+                    </button>
+                    <button [class.active]="activeTool == 'DRAW_HEADER'" appTooltip="Draw Header" (click)="activeTool ? activeTool = undefined : activeTool = 'DRAW_HEADER'">
+                        <img src="/assets/icons/editor/heading.svg" alt="Draw Header">
+                        @if (activeTool && activeTool == 'DRAW_HEADER') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(2)</span>
+                        }
+                    </button>
+                    <button [class.active]="activeTool == 'DRAW_TABLE'" appTooltip="Draw Table" (click)="activeTool ? activeTool = undefined : activeTool = 'DRAW_TABLE'">
+                        <img src="/assets/icons/editor/table.svg" alt="Draw Table">
+                        @if (activeTool && activeTool == 'DRAW_TABLE') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(3)</span>
+                        }
+                    </button>
+                </div>
+            }
         }
     `,
     styles: `
@@ -117,11 +167,54 @@ const MIN_SIZE = 5;
             width: 100%;
             height: 100%;
         }
+
+        .btn-row {
+            position: fixed;
+            left: 16px; 
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.9); 
+            padding: 8px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 100; 
+        }
+
+        .btn-row button {
+            position: relative;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-row button.active {
+            background-color: rgba(0, 123, 255, 0.1); /* Light blue background when active */
+            border-radius: 4px;
+        }
         
-        .floating {
+        .btn-row .delimiter {
+            border-bottom: 1px solid #777;
+        }
+
+        .btn-row button img {
+            height: 18px;
+            width: auto;
+        }
+        
+        .btn-row button span {
             position: absolute;
-            right: 24px;
-            bottom: 24px;
+            top: 0;
+            right: 0;
+            font-size: 9px;
+            color: #777;
         }
     `
 })

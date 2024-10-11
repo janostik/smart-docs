@@ -117,6 +117,9 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
     @Input() offsetX = 0
     @Input() offsetY = 0
 
+    @Input() sizeLimitX = 9999
+    @Input() sizeLimitY = 9999
+
     @Input({required: true}) id!: number;
     @Input({alias: "rootEl", required: true}) root!: SVGSVGElement;
     @Input({alias: "viewPortEl", required: true}) viewport!: SVGGElement;
@@ -226,10 +229,10 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
                     break;
             }
             // TODO: Clamp to min/max width
-            this.segment.x0 = changedPosition.x0
-            this.segment.x1 = changedPosition.x1
-            this.segment.y0 = changedPosition.y0
-            this.segment.y1 = changedPosition.y1
+            this.segment.x0 = Math.max(changedPosition.x0, 0)
+            this.segment.x1 = Math.min(changedPosition.x1, this.sizeLimitX)
+            this.segment.y0 = Math.max(changedPosition.y0, 0)
+            this.segment.y1 = Math.min(changedPosition.y1, this.sizeLimitY)
         }
 
         event.stopPropagation();
