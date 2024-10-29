@@ -47,6 +47,8 @@ type Page struct {
 	Status      string
 	Predictions []Prediction
 	Html        string
+	Width       int
+	Height      int
 }
 
 type PageView struct {
@@ -60,6 +62,8 @@ type PageView struct {
 	HasNextPage     bool
 	HasPreviousPage bool
 	Html            template.HTML
+	Width           int
+	Height          int
 }
 
 // TODO: Only allow 2 states from doc view and 3 states from training view

@@ -20,7 +20,7 @@ func (s *Segment) realign() {
 	if len(s.words) == 0 {
 		return
 	}
-	if s.Prediction.Label == "table" {
+	if s.Prediction.Label == "table" || s.Prediction.Label == "illustration" {
 		return
 	}
 	var x0 float32 = 99999.0
@@ -103,6 +103,8 @@ func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models
 			html += fmt.Sprintf("<p>%s</p>", segment.content)
 		case "header":
 			html += fmt.Sprintf("<h5>%s</h5>", segment.content)
+		case "illustration":
+			html += "<pre>Preview of illustrations not yet available</pre>"
 		default:
 			html += fmt.Sprintf("<span>%s</span>", segment.content)
 		}

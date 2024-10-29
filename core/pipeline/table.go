@@ -35,7 +35,7 @@ func (s *Segment) ParseTable() [][]Cell {
 		cell := cells[index]
 		for otherIndex := range cells {
 			otherCell := cells[otherIndex]
-			if otherIndex < index || contains(overlappingCells, otherIndex) {
+			if otherIndex < index || contains(overlappingCells, index) {
 				continue
 			}
 			overlap := Intersection(cell.Rect, otherCell.Rect)
@@ -218,11 +218,30 @@ func (s *Segment) ParseTable() [][]Cell {
 		row := table[r]
 		for c, _ := range row {
 			cell := row[c]
-			s.Prediction.Table = append(s.Prediction.Table, *cell.Prediction)
+			if isValidCell(cell, r, c, table) {
+				s.Prediction.Table = append(s.Prediction.Table, *cell.Prediction)
+			}
 		}
 	}
 
 	return table
+}
+
+func isValidCell(cell Cell, testedRow int, testedCol int, table [][]Cell) bool {
+	for r, _ := range table {
+		row := table[r]
+		for c, _ := range row {
+			other := row[c]
+			if r == testedRow && c == testedCol {
+				continue
+			}
+			overlap := Intersection(cell.Rect, other.Rect)
+			if overlap > 0.1 {
+				return Area(cell.Rect) < Area(other.Rect)
+			}
+		}
+	}
+	return true
 }
 
 func nearest(item float32, grid []float32) float32 {

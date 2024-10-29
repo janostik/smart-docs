@@ -166,6 +166,8 @@ export class AppAnnotationComponent implements OnInit, AfterViewInit {
                 return "#c1272d"
             case "paragraph":
                 return "#12446e"
+            case "illustration":
+                return "#ff6600" // TODO: Change
             default:
                 return "#ff6600"
         }

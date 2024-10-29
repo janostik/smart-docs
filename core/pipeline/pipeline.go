@@ -37,6 +37,11 @@ func ProcessPdf(docId int64) {
 		page.PdfText = words[p]
 		// TODO: Update pages with OCR
 		page.OcrText = ""
+		err := GetPageDimensions(page)
+		if err != nil {
+			log.Println(fmt.Sprintf("Error getting image dimensions: \n%+v", err))
+			return
+		}
 		predictions, err := RunDetectionOnPage(docId, p)
 		DrawBoundingBoxes(docId, p, &predictions, "original")
 		if err != nil {

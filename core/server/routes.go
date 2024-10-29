@@ -1,6 +1,7 @@
 package server
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
@@ -14,6 +15,7 @@ import (
 	"smart-docs/core/models"
 	"smart-docs/core/pipeline"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -44,6 +46,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		"./cmd/web/templates/annotate.go.html",
 		"./cmd/web/templates/document.go.html",
 		"./cmd/web/templates/document-loading.go.html",
+		"./cmd/web/templates/nothing-to-annotate.go.html",
 		"./cmd/web/templates/partial/head.go.html",
 		"./cmd/web/templates/partial/document-row.go.html",
 		"./cmd/web/templates/partial/page-status.go.html",
@@ -73,7 +76,7 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("hx-request") == "true" {
+	if r.Header.Get("hx-current-url") != "" && !strings.Contains(r.Header.Get("hx-current-url"), "document") {
 		err = tmpl.ExecuteTemplate(w, "document-row.go.html", doc)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -228,6 +231,15 @@ func (s *Server) ListDocuments(w http.ResponseWriter, r *http.Request) {
 func (s *Server) NextPageToAnnotate(w http.ResponseWriter, r *http.Request) {
 	var page models.PageView
 	err := db.NextPageToAnnotate(&page)
+
+	if err == sql.ErrNoRows {
+		err = tmpl.ExecuteTemplate(w, "nothing-to-annotate.go.html", page)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

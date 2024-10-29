@@ -35,6 +35,21 @@ type PredictionResponse struct {
 	Y1    float32 `json:"y1"`
 }
 
+func GetPageDimensions(page *models.Page) error {
+	imageFile, err := os.Open(fmt.Sprintf("cmd/web/assets/images/%d/%d.jpg", page.DocumentId, page.PageNum))
+	if err != nil {
+		return err
+	}
+	defer imageFile.Close()
+	image, _, err := image.DecodeConfig(imageFile)
+	if err != nil {
+		return err
+	}
+	page.Width = image.Width
+	page.Height = image.Height
+	return nil
+}
+
 func RunDetectionOnPage(docId int64, page int) ([]models.Prediction, error) {
 
 	imageFile, err := os.Open(fmt.Sprintf("cmd/web/assets/images/%d/%d.jpg", docId, page))

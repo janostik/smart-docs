@@ -151,6 +151,14 @@ const MIN_SIZE = 5;
                             <span>(3)</span>
                         }
                     </button>
+                    <button [class.active]="activeTool == 'DRAW_IMAGE'" appTooltip="Draw Image" (click)="activeTool ? activeTool = undefined : activeTool = 'DRAW_IMAGE'">
+                        <img src="/assets/icons/editor/image.svg" alt="Draw Image">
+                        @if (activeTool && activeTool == 'DRAW_IMAGE') {
+                            <span>(ESC)</span>
+                        } @else {
+                            <span>(4)</span>
+                        }
+                    </button>
                 </div>
             }
         }
@@ -243,7 +251,7 @@ export class AppAnnotationToolComponent implements OnInit {
     private _rect?: SVGRectElement;
     private _line?: SVGLineElement;
 
-    private _activeTool?: ('DRAW_P' | 'DRAW_HEADER' | 'DRAW_TABLE' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
+    private _activeTool?: ('DRAW_P' | 'DRAW_HEADER' | 'DRAW_TABLE' | 'DRAW_IMAGE' | 'SPLIT_ROWS' | 'SPLIT_COLS' | 'MERGE')
     private _drawStartPoint: { x: number; y: number } = {x: 0, y: 0};
     private _onDestroy$ = new Subject<void>();
     private _shiftPressed: boolean = false;
@@ -312,6 +320,9 @@ export class AppAnnotationToolComponent implements OnInit {
             } else if (event.key === '3') {
                 event.stopImmediatePropagation();
                 this.activeTool = 'DRAW_TABLE'
+            } else if (event.key === '4') {
+                event.stopImmediatePropagation();
+                this.activeTool = 'DRAW_IMAGE'
             }
         }
     }
@@ -358,6 +369,7 @@ export class AppAnnotationToolComponent implements OnInit {
                 case "DRAW_P":
                 case "DRAW_HEADER":
                 case "DRAW_TABLE":
+                case "DRAW_IMAGE":
                     this.rootEl.nativeElement.addEventListener('mousedown', this.drawRectToolStart, { passive: true });
                     this.rootEl.nativeElement.addEventListener('mousemove', this.drawRectToolMove, { passive: true });
                     this.rootEl.nativeElement.addEventListener('mouseup', this.drawRectToolEnd, { passive: true });
@@ -397,6 +409,8 @@ export class AppAnnotationToolComponent implements OnInit {
                 return "table";
             case "DRAW_HEADER":
                 return "header";
+            case "DRAW_IMAGE":
+                return "illustration";
             default:
                 return "other"
         }
@@ -406,6 +420,8 @@ export class AppAnnotationToolComponent implements OnInit {
         this.type = this.elementRef.nativeElement.getAttribute('type');
         this.documentId = this.elementRef.nativeElement.getAttribute('document-id');
         this.pageNumber = this.elementRef.nativeElement.getAttribute('page-number');
+        this.width = this.elementRef.nativeElement.getAttribute('image-width');
+        this.height = this.elementRef.nativeElement.getAttribute('image-height');
         this.imageUrl = `/assets/images/${this.documentId}/${this.pageNumber}.jpg`
     }
 
@@ -508,6 +524,7 @@ export class AppAnnotationToolComponent implements OnInit {
                     case "DRAW_P":
                     case "DRAW_HEADER":
                     case "DRAW_TABLE":
+                    case "DRAW_IMAGE":
                         this.annotations.push({
                             x0: +this._rect.getAttribute("x")!,
                             y0: +this._rect.getAttribute("y")!,
