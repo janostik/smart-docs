@@ -18,14 +18,14 @@ type PdfWords struct {
 
 func storeImagesAndExtractPages(documentId int64) (int, [][]models.WordData, error) {
 	pdfName := fmt.Sprintf("%d", documentId)
-	pdfPath := fmt.Sprintf("data/%s.pdf", pdfName)
+	pdfPath := fmt.Sprintf("data/files/%s.pdf", pdfName)
 	doc, err := fitz.New(pdfPath)
 	if err != nil {
 		return -1, nil, err
 	}
 	defer doc.Close()
 
-	err = os.MkdirAll(fmt.Sprintf("cmd/web/assets/images/%s", pdfName), os.ModePerm)
+	err = os.MkdirAll(fmt.Sprintf("data/images/%s", pdfName), os.ModePerm)
 	if err != nil {
 		return -1, nil, err
 	}
@@ -42,7 +42,7 @@ func storeImagesAndExtractPages(documentId int64) (int, [][]models.WordData, err
 			return -1, nil, err
 		}
 
-		f, err := os.Create(fmt.Sprintf("cmd/web/assets/images/%s/%d.jpg", pdfName, p))
+		f, err := os.Create(fmt.Sprintf("data/images/%s/%d.jpg", pdfName, p))
 		if err != nil {
 			return -1, nil, err
 		}

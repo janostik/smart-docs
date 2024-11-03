@@ -28,7 +28,7 @@ func New() Service {
 	if dbInstance != nil {
 		return dbInstance
 	}
-	db, err := sql.Open("sqlite3", "./documents.sql")
+	db, err := sql.Open("sqlite3", "./data/documents.sql")
 	if err != nil {
 		// This will not be connection error
 		log.Fatal(err)

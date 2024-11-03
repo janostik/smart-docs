@@ -422,7 +422,7 @@ export class AppAnnotationToolComponent implements OnInit {
         this.pageNumber = this.elementRef.nativeElement.getAttribute('page-number');
         this.width = this.elementRef.nativeElement.getAttribute('image-width');
         this.height = this.elementRef.nativeElement.getAttribute('image-height');
-        this.imageUrl = `/assets/images/${this.documentId}/${this.pageNumber}.jpg`
+        this.imageUrl = `/images/${this.documentId}/${this.pageNumber}.jpg`
     }
 
     ngOnInit() {

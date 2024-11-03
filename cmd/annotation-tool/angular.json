@@ -13,7 +13,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "../../cmd/web/assets/annotator",
+            "outputPath": "../web/assets/annotator",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [

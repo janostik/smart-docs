@@ -28,6 +28,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	fs := http.FileServer(http.Dir("./cmd/web/assets/"))
 	r.Handle("/assets/*", http.StripPrefix("/assets/", fs))
 
+	imgFs := http.FileServer(http.Dir("./data/images/"))
+	r.Handle("/images/*", http.StripPrefix("/images/", imgFs))
+
 	r.Get("/health", s.healthHandler)
 	r.Get("/", s.ListDocuments)
 	r.Get("/annotate", s.NextPageToAnnotate)
@@ -194,7 +197,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := fmt.Sprintf("data/%d.pdf", docId)
+	filePath := fmt.Sprintf("data/files/%d.pdf", docId)
 	dest, err := os.Create(filePath)
 	if err != nil {
 		log.Println(err.Error())
