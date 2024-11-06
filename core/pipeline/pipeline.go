@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/llgcode/draw2d/draw2dimg"
 	"golang.org/x/image/colornames"
@@ -13,7 +14,7 @@ import (
 	"smart-docs/core/models"
 )
 
-func ProcessPdf(docId int64) {
+func ProcessPdf(docId int64, shouldRunOcr bool) {
 	pageCount, words, err := storeImagesAndExtractPages(docId)
 	if err != nil {
 		log.Println(fmt.Sprintf("Error while extracting images: \n%+v", err))
@@ -26,6 +27,15 @@ func ProcessPdf(docId int64) {
 		return
 	}
 
+	var ocrWords [][]models.WordData
+	if shouldRunOcr {
+		ocrWords, err = DetectAsyncDocumentURI(docId)
+		if err != nil {
+			log.Println(fmt.Sprintf("Error while running ocr: \n%+v", err))
+			return
+		}
+	}
+
 	var pages = make([]models.Page, pageCount)
 
 	for p := range pages {
@@ -34,13 +44,28 @@ func ProcessPdf(docId int64) {
 		page.PageNum = p
 		page.Status = "PREDICTION"
 
-		page.PdfText = words[p]
-		// TODO: Update pages with OCR
-		page.OcrText = ""
 		err := GetPageDimensions(page)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error getting image dimensions: \n%+v", err))
 			return
+		}
+
+		page.PdfText = words[p]
+		if ocrWords != nil {
+			pageWords := ocrWords[p]
+			for w, _ := range pageWords {
+				word := &pageWords[w]
+				word.X0 = word.X0 * float32(page.Width)
+				word.X1 = word.X1 * float32(page.Width)
+				word.Y0 = word.Y0 * float32(page.Height)
+				word.Y1 = word.Y1 * float32(page.Height)
+			}
+			serialisedOcr, err := json.Marshal(pageWords)
+			if err != nil {
+				log.Println(fmt.Sprintf("Error serialising ocr data: \n%+v", err))
+				return
+			}
+			page.OcrText = string(serialisedOcr)
 		}
 		predictions, err := RunDetectionOnPage(docId, p)
 		DrawBoundingBoxes(docId, p, &predictions, "original")
@@ -48,7 +73,11 @@ func ProcessPdf(docId int64) {
 			log.Println(fmt.Sprintf("Error detecting segments: \n%+v", err))
 			return
 		}
-		page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions)
+		if shouldRunOcr {
+			page.Html = ParseHtmlAndAdjustDetection(&ocrWords[p], &predictions)
+		} else {
+			page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions)
+		}
 		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		page.Predictions = predictions
 	}

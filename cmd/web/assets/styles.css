@@ -170,54 +170,57 @@ article table td {
 /**
 FILE UPLOAD
  */
-
-.box {
+form {
     position: relative;
-    outline: 2px dashed #ececec;
     background: white;
-    outline-offset: -10px;
+    display: flex;
+    flex-direction: row;
+    outline: 2px dashed #ececec;
+    outline-offset: -8px;
+    padding: 16px;
 }
 
-.box__input {
+form label {
+    color: #82add2;
+}
+
+form.is-dragover {
+    outline-color: #82add2;
+}
+
+form input[type="file"] {
+    width: 0;
+    height: 0;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    z-index: -1;
+}
+
+form .form-group {
     display: flex;
     flex-direction: row;
     gap: 16px;
     align-items: center;
     justify-content: center;
-    height: 70px;
 }
 
-
-.box.is-dragover {
-    outline-color: #82add2;
-}
-
-.box__dragndrop,
-.box__icon {
-    display: none;
-}
-
-.box .box__dragndrop {
-    display: inline;
-    color: #82add2;
-}
-
-.box .box__icon {
+form svg {
     height: 20px;
     fill: #82add2;
     display: block;
 }
 
-.box.is-uploading .box__input {
+form.is-uploading .form-group {
     visibility: hidden;
 }
 
-.box__uploading {
+.loading-indicator {
     display: none;
     font-style: italic;
 }
 
-.box.is-uploading .box__uploading {
+form.is-uploading .loading-indicator {
     display: block;
     position: absolute;
     top: 50%;
@@ -226,33 +229,6 @@ FILE UPLOAD
     transform: translateY(-50%);
 }
 
-.box__success {
-    animation: appear-from-inside .25s ease-in-out;
-}
-
-
-.box__file {
-    width: 0.1px;
-    height: 0.1px;
-    opacity: 0;
-    overflow: hidden;
-    position: absolute;
-    z-index: -1;
-}
-
-/*.box__file + label {*/
-/*    text-overflow: ellipsis;*/
-/*    white-space: nowrap;*/
-/*    cursor: pointer;*/
-/*    display: inline-block;*/
-/*    overflow: hidden;*/
-/*    color: #FC5621;*/
-/*}*/
-
 label > strong {
     color: #82add2;
-}
-
-.box__button {
-    display: none;
 }

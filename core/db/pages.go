@@ -162,7 +162,10 @@ func GetPdfPageText(docId int64, pageNum int) ([]models.WordData, error) {
 	var serialisedText string
 	err := dbInstance.db.QueryRow(`
 		select 
-		    p.pdf_text
+		    CASE 
+				WHEN p.ocr_text <> '' THEN p.ocr_text 
+				ELSE p.pdf_text 
+			END AS text
 		from documents doc
 			left join pages p on doc.id = p.document_id and p.page_num = ?
 		where doc.id = ?

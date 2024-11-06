@@ -175,7 +175,13 @@ func (s *Server) LoadContent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
-	r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		log.Println(fmt.Sprintf("Failed to parse request form: \n%v", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	shouldRunOcr := r.FormValue("ocr") == "on"
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		log.Println(err.Error())
@@ -213,7 +219,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go pipeline.ProcessPdf(docId)
+	go pipeline.ProcessPdf(docId, shouldRunOcr)
 
 	w.Header().Add("HX-Redirect", fmt.Sprintf("/document/%d", doc.Id))
 }
