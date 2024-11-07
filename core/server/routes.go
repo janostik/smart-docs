@@ -26,8 +26,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	fs := http.FileServer(http.FS(web.Files))
-	r.Handle("/assets/*", http.StripPrefix("/assets/", fs))
+	r.Handle("/assets/*", http.FileServer(http.FS(web.Files)))
 
 	imgFs := http.FileServer(http.Dir("./data/images/"))
 	r.Handle("/images/*", http.StripPrefix("/images/", imgFs))
