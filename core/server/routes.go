@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"smart-docs/cmd/web"
 	"smart-docs/core/db"
 	"smart-docs/core/models"
 	"smart-docs/core/pipeline"
@@ -25,7 +26,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	fs := http.FileServer(http.Dir("./cmd/web/assets/"))
+	fs := http.FileServer(http.FS(web.Files))
 	r.Handle("/assets/*", http.StripPrefix("/assets/", fs))
 
 	imgFs := http.FileServer(http.Dir("./data/images/"))
@@ -44,15 +45,15 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/document/{documentId}/{pageNum}/predictions", s.GetPredictions)
 	r.Post("/document/{documentId}/{pageNum}/predictions", s.SetPredictions)
 
-	tmpl = template.Must(template.ParseFiles(
-		"./cmd/web/templates/documents.go.html",
-		"./cmd/web/templates/annotate.go.html",
-		"./cmd/web/templates/document.go.html",
-		"./cmd/web/templates/document-loading.go.html",
-		"./cmd/web/templates/nothing-to-annotate.go.html",
-		"./cmd/web/templates/partial/head.go.html",
-		"./cmd/web/templates/partial/document-row.go.html",
-		"./cmd/web/templates/partial/page-status.go.html",
+	tmpl = template.Must(template.ParseFS(web.Files,
+		"templates/documents.go.html",
+		"templates/annotate.go.html",
+		"templates/document.go.html",
+		"templates/document-loading.go.html",
+		"templates/nothing-to-annotate.go.html",
+		"templates/partial/head.go.html",
+		"templates/partial/document-row.go.html",
+		"templates/partial/page-status.go.html",
 	))
 
 	return r
