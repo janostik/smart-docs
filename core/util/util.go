@@ -1,6 +1,9 @@
 package util
 
-import "os"
+import (
+	"math/rand"
+	"os"
+)
 
 func Getenv(key, fallback string) string {
 	value := os.Getenv(key)
@@ -8,4 +11,14 @@ func Getenv(key, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

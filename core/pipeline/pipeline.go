@@ -29,7 +29,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 
 	var ocrWords [][]models.WordData
 	if shouldRunOcr {
-		ocrWords, err = DetectAsyncDocumentURI(docId)
+		ocrWords, err = DetectAsyncDocumentURI(docId, pageCount)
 		if err != nil {
 			log.Println(fmt.Sprintf("Error while running ocr: \n%+v", err))
 			return
@@ -52,15 +52,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 
 		page.PdfText = words[p]
 		if ocrWords != nil {
-			pageWords := ocrWords[p]
-			for w, _ := range pageWords {
-				word := &pageWords[w]
-				word.X0 = word.X0 * float32(page.Width)
-				word.X1 = word.X1 * float32(page.Width)
-				word.Y0 = word.Y0 * float32(page.Height)
-				word.Y1 = word.Y1 * float32(page.Height)
-			}
-			serialisedOcr, err := json.Marshal(pageWords)
+			serialisedOcr, err := json.Marshal(ocrWords[p])
 			if err != nil {
 				log.Println(fmt.Sprintf("Error serialising ocr data: \n%+v", err))
 				return

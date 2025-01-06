@@ -90,6 +90,9 @@ func RunDetectionOnPage(docId int64, page int) ([]models.Prediction, error) {
 				log.Println(fmt.Sprintf("Error detecting segments: \n%+v", err))
 			} else {
 				tablePredictions := runPrediction(cropped, tablePredictorUrl)
+				if len(tablePredictions) == 0 {
+					prediction.Label = "paragraph"
+				}
 				for _, t := range tablePredictions {
 					prediction.Table = append(prediction.Table, models.Prediction{
 						Score: t.Score,

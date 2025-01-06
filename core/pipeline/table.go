@@ -126,12 +126,14 @@ func (s *Segment) ParseTable() [][]Cell {
 		if len(row) < minCols {
 			minCols = len(row)
 		}
-		offset := row[0].X0
-		for c, _ := range row {
-			cell := row[c]
-			table[r][c].OffsetStart = offset
-			cell.OffsetStart = offset
-			offset = offset + cell.Width()
+		if len(row) > 0 {
+			offset := row[0].X0
+			for c, _ := range row {
+				cell := row[c]
+				table[r][c].OffsetStart = offset
+				cell.OffsetStart = offset
+				offset = offset + cell.Width()
+			}
 		}
 	}
 

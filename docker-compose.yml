@@ -1,0 +1,26 @@
+version: "3"
+services:
+  layout-predictor:
+    image: gcr.io/c-labs1/cl-segmentation-predictor:DEV23-2081
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /root/keys/keyfile.json
+      PROJECT_NAME: c-labs1
+      IMG_SIZE: 1280
+      MODEL_FILE: gs://c-labs1-lw-segmentation-dataset/models/doc/generic/v4_2024_02_22/weights/best.pt
+    ports:
+      - "10001:8080"
+    volumes:
+      # Inject your specific service account keyfile into the container at runtime.
+      -  ~/.config/gcloud/application_default_credentials.json:/root/keys/keyfile.json:ro
+  table-layout-predictor:
+    image: gcr.io/c-labs1/cl-segmentation-predictor:DEV23-2081
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /root/keys/keyfile.json
+      PROJECT_NAME: c-labs1
+      IMG_SIZE: 1280
+      MODEL_FILE: gs://c-labs1-lw-segmentation-dataset/models/table/generic/v9_2024_08_01/weights/best.pt
+    ports:
+      - "10002:8080"
+    volumes:
+      # Inject your specific service account keyfile into the container at runtime.
+      -  ~/.config/gcloud/application_default_credentials.json:/root/keys/keyfile.json:ro

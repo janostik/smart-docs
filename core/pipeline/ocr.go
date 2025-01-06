@@ -6,7 +6,6 @@ import (
 	"cloud.google.com/go/vision/v2/apiv1/visionpb"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -74,7 +73,7 @@ type OcrPropertyType struct {
 	Type string `json:"type"`
 }
 
-func DetectAsyncDocumentURI(docId int64) ([][]models.WordData, error) {
+func DetectAsyncDocumentURI(docId int64, pageCount int) ([][]models.WordData, error) {
 
 	ctx := context.Background()
 	client, err := vision.NewImageAnnotatorClient(ctx)
@@ -88,13 +87,12 @@ func DetectAsyncDocumentURI(docId int64) ([][]models.WordData, error) {
 	}
 	defer storageClient.Close()
 
-	err = ensurePdfUploaded(docId, ctx, storageClient)
+	jobId := util.RandStringBytes(8)
+
+	err = uploadPdf(jobId, docId, ctx, storageClient)
 	if err != nil {
 		return nil, err
 	}
-
-	// Hardcoded delay, otherwise google vision doesn't know about the newly created file yet.
-	//time.Sleep(15 * time.Second)
 
 	request := &visionpb.AsyncBatchAnnotateFilesRequest{
 		Requests: []*visionpb.AsyncAnnotateFileRequest{
@@ -105,12 +103,12 @@ func DetectAsyncDocumentURI(docId int64) ([][]models.WordData, error) {
 					},
 				},
 				InputConfig: &visionpb.InputConfig{
-					GcsSource: &visionpb.GcsSource{Uri: fmt.Sprintf("gs://%s/%d/input.pdf", googleOcrBucket, docId)},
+					GcsSource: &visionpb.GcsSource{Uri: fmt.Sprintf("gs://%s/%s/input.pdf", googleOcrBucket, jobId)},
 					MimeType:  "application/pdf",
 				},
 				OutputConfig: &visionpb.OutputConfig{
-					GcsDestination: &visionpb.GcsDestination{Uri: fmt.Sprintf("gs://%s/%d/ocr/", googleOcrBucket, docId)},
-					BatchSize:      2,
+					GcsDestination: &visionpb.GcsDestination{Uri: fmt.Sprintf("gs://%s/%s/ocr/", googleOcrBucket, jobId)},
+					BatchSize:      1,
 				},
 			},
 		},
@@ -126,52 +124,41 @@ func DetectAsyncDocumentURI(docId int64) ([][]models.WordData, error) {
 		return nil, err
 	}
 
-	return parseOCRResultsFromGCS(docId, ctx, storageClient)
+	return parseOCRResultsFromGCS(jobId, pageCount, ctx, storageClient)
 }
 
-func ensurePdfUploaded(docId int64, ctx context.Context, client *storage.Client) error {
+func uploadPdf(jobId string, docId int64, ctx context.Context, client *storage.Client) error {
 
 	bucket := client.Bucket(googleOcrBucket)
-	remoteFile := bucket.Object(fmt.Sprintf("%d/input.pdf", docId))
-	_, err := remoteFile.Attrs(ctx)
-	if errors.Is(err, storage.ErrObjectNotExist) {
-		file, err := os.Open(fmt.Sprintf("data/files/%d.pdf", docId))
-		if err != nil {
-			return err
-		}
+	remoteFile := bucket.Object(fmt.Sprintf("%s/input.pdf", jobId))
 
-		writer := remoteFile.NewWriter(ctx)
-
-		_, err = io.Copy(writer, file)
-		if err != nil {
-			return err
-		}
-
-		writer.Close()
-		return nil
-	}
+	file, err := os.Open(fmt.Sprintf("data/files/%d.pdf", docId))
 	if err != nil {
 		return err
 	}
+
+	writer := remoteFile.NewWriter(ctx)
+	defer writer.Close()
+
+	_, err = io.Copy(writer, file)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func parseOCRResultsFromGCS(docId int64, ctx context.Context, client *storage.Client) ([][]models.WordData, error) {
+func parseOCRResultsFromGCS(jobId string, pageCount int, ctx context.Context, client *storage.Client) ([][]models.WordData, error) {
 	var pages [][]models.WordData
 
 	bkt := client.Bucket(googleOcrBucket)
 
-	it := bkt.Objects(ctx, &storage.Query{Prefix: fmt.Sprintf("%d/ocr/", docId)})
-	for {
-		objAttrs, err := it.Next()
-		if err != nil {
-			break
-		}
-
-		obj := bkt.Object(objAttrs.Name)
+	for pageNum := 1; pageNum <= pageCount; pageNum++ {
+		filename := fmt.Sprintf("%s/ocr/output-%d-to-%d.json", jobId, pageNum, pageNum)
+		obj := bkt.Object(filename)
 		r, err := obj.NewReader(ctx)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 		}
 		defer r.Close()
 
@@ -186,7 +173,10 @@ func parseOCRResultsFromGCS(docId int64, ctx context.Context, client *storage.Cl
 		}
 
 		for _, page := range jsonResponse.Responses {
+
 			var pageWords []models.WordData
+			width := page.FullTextAnnotation.Pages[0].Width
+			height := page.FullTextAnnotation.Pages[0].Height
 			for _, block := range page.FullTextAnnotation.Pages[0].Blocks {
 				for _, paragraph := range block.Paragraphs {
 					for _, word := range paragraph.Words {
@@ -198,10 +188,10 @@ func parseOCRResultsFromGCS(docId int64, ctx context.Context, client *storage.Cl
 
 						pageWords = append(pageWords, models.WordData{
 							Rect: models.Rect{
-								X0: word.BoundingBox.NormalizedVertices[0].X,
-								Y0: word.BoundingBox.NormalizedVertices[0].Y,
-								X1: word.BoundingBox.NormalizedVertices[2].X,
-								Y1: word.BoundingBox.NormalizedVertices[2].Y,
+								X0: word.BoundingBox.NormalizedVertices[0].X * float32(width),
+								Y0: word.BoundingBox.NormalizedVertices[0].Y * float32(height),
+								X1: word.BoundingBox.NormalizedVertices[1].X * float32(width),
+								Y1: word.BoundingBox.NormalizedVertices[2].Y * float32(height),
 							},
 							Text: wordText,
 						})
