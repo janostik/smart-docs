@@ -1,4 +1,6 @@
 import io
+import json
+
 import pdfplumber
 import cv2
 import numpy as np
@@ -22,29 +24,31 @@ def plot_one_box(x, im, color=(128, 128, 128), label=None, line_thickness=3):
 
 if __name__ == "__main__":
 
-    with pdfplumber.open("/Users/jakub/Desktop/mrl_india_appendix_a_partial.pdf") as pdf:
-        page = pdf.pages[0]
-        words = page.extract_words()  # list of words on page
+    with pdfplumber.open("/Users/jakub/Downloads/3c646447-e936-4b60-bce4-8a5130b7149d.pdf") as pdf:
+        with open("./test-ocr.json", "r") as jsonFile:
+            ocr = json.load(jsonFile)
+            page = pdf.pages[1]
 
-        img = page.to_image().original
-        img_byte_arr = io.BytesIO()
-        img.save(img_byte_arr, format='JPEG')
+            img = page.to_image().original
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='JPEG')
 
-        data = np.array(img)
-        words = page.extract_words()
-        for w in words:
-            plot_one_box(
-                [
-                    int(w['x0'],),
-                    int(w['top'],),
-                    int(w['x1'],),
-                    int(w['bottom'])
-                ],
-                data,
-                color=(128, 128, 128),
-                line_thickness=1
-            )
+            data = np.array(img)
 
-        plt.rcParams["figure.dpi"] = 300
-        plt.imshow(data)
-        plt.show()
+            for word in ocr:
+                plot_one_box(
+                    [
+                        int(word['x0'],),
+                        int(word['y0'],),
+                        int(word['x1'],),
+                        int(word['y1'],),
+                    ],
+                    data,
+                    color=(128, 128, 128),
+                    line_thickness=1
+                )
+
+
+            plt.rcParams["figure.dpi"] = 300
+            plt.imshow(data)
+            plt.show()

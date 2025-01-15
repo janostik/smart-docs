@@ -39,6 +39,8 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 	var pages = make([]models.Page, pageCount)
 
 	for p := range pages {
+		log.Println(fmt.Sprintf("Annotating page: %d", p))
+
 		page := &pages[p]
 		page.DocumentId = docId
 		page.PageNum = p

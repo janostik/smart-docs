@@ -39,7 +39,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/document/{documentId}", s.LoadDocument)
 	r.Delete("/document/{documentId}", s.DeleteDocument)
 	r.Get("/document/{documentId}/content", s.LoadContent)
-	r.Put("/document/{documentId}/retry", s.RetryAnnotations)
+	r.Put("/document/{documentId}/retry", s.Retry)
 	r.Patch("/document/{documentId}/{pageNum}/status/{newStatus}", s.UpdateStatus)
 	r.Get("/document/{documentId}/{pageNum}/predictions", s.GetPredictions)
 	r.Post("/document/{documentId}/{pageNum}/predictions", s.SetPredictions)
@@ -334,7 +334,7 @@ func (s *Server) SetPredictions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) RetryAnnotations(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Retry(w http.ResponseWriter, r *http.Request) {
 	docId, err := strconv.ParseInt(chi.URLParam(r, "documentId"), 10, 64)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

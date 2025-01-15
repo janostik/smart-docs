@@ -242,9 +242,11 @@ func GetPdfDocText(docId int64) (string, error) {
 		return "", err
 	}
 	var b strings.Builder
+	b.WriteString("<html>\n")
 	for p, _ := range pages {
 		b.WriteString(fmt.Sprintf("\n<section page=\"%d\">\n%s\n</section>\n", p, pages[p]))
 	}
+	b.WriteString("\n</html>")
 
 	return b.String(), nil
 }

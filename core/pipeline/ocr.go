@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"smart-docs/core/models"
 	"smart-docs/core/util"
@@ -149,8 +150,9 @@ func uploadPdf(jobId string, docId int64, ctx context.Context, client *storage.C
 }
 
 func parseOCRResultsFromGCS(jobId string, pageCount int, ctx context.Context, client *storage.Client) ([][]models.WordData, error) {
-	var pages [][]models.WordData
+	log.Println(fmt.Sprintf("Parsing job: %s", jobId))
 
+	var pages [][]models.WordData
 	bkt := client.Bucket(googleOcrBucket)
 
 	for pageNum := 1; pageNum <= pageCount; pageNum++ {
@@ -172,12 +174,18 @@ func parseOCRResultsFromGCS(jobId string, pageCount int, ctx context.Context, cl
 			return nil, err
 		}
 
-		for _, page := range jsonResponse.Responses {
+		for _, response := range jsonResponse.Responses {
+
+			if len(response.FullTextAnnotation.Pages) < 1 {
+				log.Println(fmt.Sprintf("Skipping empty page: %d", pageNum))
+				pages = append(pages, []models.WordData{})
+				continue
+			}
 
 			var pageWords []models.WordData
-			width := page.FullTextAnnotation.Pages[0].Width
-			height := page.FullTextAnnotation.Pages[0].Height
-			for _, block := range page.FullTextAnnotation.Pages[0].Blocks {
+			width := response.FullTextAnnotation.Pages[0].Width
+			height := response.FullTextAnnotation.Pages[0].Height
+			for _, block := range response.FullTextAnnotation.Pages[0].Blocks {
 				for _, paragraph := range block.Paragraphs {
 					for _, word := range paragraph.Words {
 
