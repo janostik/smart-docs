@@ -2,7 +2,12 @@ package pipeline
 
 import (
 	"cmp"
+	"encoding/base64"
 	"fmt"
+	"image"
+	"image/jpeg"
+	"log"
+	"os"
 	"slices"
 	"smart-docs/core/models"
 	"strings"
@@ -48,7 +53,41 @@ func (s *Segment) realign() {
 	s.Prediction.Y1 = y1
 }
 
-func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models.Prediction) string {
+func extractAndEncodeImage(docId int64, pageNum int, prediction *models.Prediction) (string, error) {
+	imgFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", docId, pageNum))
+	if err != nil {
+		return "", fmt.Errorf("cannot open image: %v", err)
+	}
+	defer imgFile.Close()
+
+	img, err := jpeg.Decode(imgFile)
+	if err != nil {
+		return "", fmt.Errorf("cannot decode image: %v", err)
+	}
+
+	// Create a cropped image
+	croppedImg := img.(interface {
+		SubImage(r image.Rectangle) image.Image
+	}).SubImage(image.Rect(
+		int(prediction.X0),
+		int(prediction.Y0),
+		int(prediction.X1),
+		int(prediction.Y1),
+	))
+
+	// Encode to JPEG in memory
+	buf := new(strings.Builder)
+	b64Encoder := base64.NewEncoder(base64.StdEncoding, buf)
+	err = jpeg.Encode(b64Encoder, croppedImg, nil)
+	if err != nil {
+		return "", fmt.Errorf("cannot encode image: %v", err)
+	}
+	b64Encoder.Close()
+
+	return buf.String(), nil
+}
+
+func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models.Prediction, docId int64, pageNum int) string {
 	segments := make([]Segment, len(*predictions))
 
 	for i := range *predictions {
@@ -98,13 +137,17 @@ func ParseHtmlAndAdjustDetection(words *[]models.WordData, predictions *[]models
 			}
 			b.WriteString("</table>")
 			html += b.String()
-			break
 		case "paragraph":
 			html += fmt.Sprintf("<p>%s</p>", segment.content)
 		case "header":
 			html += fmt.Sprintf("<h5>%s</h5>", segment.content)
 		case "illustration":
-			html += "<pre>Preview of illustrations not yet available</pre>"
+			if b64Image, err := extractAndEncodeImage(docId, pageNum, segment.Prediction); err == nil {
+				html += fmt.Sprintf("<img src=\"data:image/jpeg;base64,%s\" alt=\"Illustration\"/>", b64Image)
+			} else {
+				log.Printf("Failed to extract illustration: %v", err)
+				html += "<pre>Failed to extract illustration</pre>"
+			}
 		default:
 			html += fmt.Sprintf("<span>%s</span>", segment.content)
 		}

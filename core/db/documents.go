@@ -5,20 +5,33 @@ import (
 	"smart-docs/core/models"
 )
 
-func ListDocuments() ([]models.Document, error) {
-	rows, err := dbInstance.db.Query(`
-			select 
-			    d.id, 
-			    d.name,
-			    d.upload_date,
-			    d.status,
-			    count(p.id) as page_count,
-				COUNT(CASE WHEN p.status = 'VALIDATION' THEN 1 END) AS validated_count,
-				COUNT(CASE WHEN p.status = 'TRAINING' THEN 1 END) AS in_progress_count
-			from documents d
-				left join pages p on d.id = p.document_id
-			group by d.id, d.name, d.upload_date
-			order by upload_date desc`)
+func ListDocuments(limit int, offset int, search string) ([]models.Document, error) {
+	query := `
+		select 
+			d.id, 
+			d.name,
+			d.upload_date,
+			d.status,
+			count(p.id) as page_count,
+			COUNT(CASE WHEN p.status = 'VALIDATION' THEN 1 END) AS validated_count,
+			COUNT(CASE WHEN p.status = 'TRAINING' THEN 1 END) AS in_progress_count
+		from documents d
+			left join pages p on d.id = p.document_id`
+
+	args := []interface{}{}
+	if search != "" {
+		query += ` where d.name LIKE ?`
+		args = append(args, "%"+search+"%")
+	}
+
+	query += `
+		group by d.id, d.name, d.upload_date
+		order by upload_date desc
+		limit ? offset ?`
+
+	args = append(args, limit, offset)
+
+	rows, err := dbInstance.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}

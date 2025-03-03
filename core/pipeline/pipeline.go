@@ -3,8 +3,6 @@ package pipeline
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/llgcode/draw2d/draw2dimg"
-	"golang.org/x/image/colornames"
 	"image"
 	"image/draw"
 	"image/jpeg"
@@ -12,18 +10,21 @@ import (
 	"os"
 	"smart-docs/core/db"
 	"smart-docs/core/models"
+
+	"github.com/llgcode/draw2d/draw2dimg"
+	"golang.org/x/image/colornames"
 )
 
 func ProcessPdf(docId int64, shouldRunOcr bool) {
 	pageCount, words, err := storeImagesAndExtractPages(docId)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error while extracting images: \n%+v", err))
+		log.Printf("Error while extracting images: \n%+v", err)
 		return
 	}
 
 	err = db.UpdatePageCount(docId, pageCount)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error while calling core.db: \n%+v", err))
+		log.Printf("Error while calling core.db: \n%+v", err)
 		return
 	}
 
@@ -31,7 +32,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 	if shouldRunOcr {
 		ocrWords, err = DetectAsyncDocumentURI(docId, pageCount)
 		if err != nil {
-			log.Println(fmt.Sprintf("Error while running ocr: \n%+v", err))
+			log.Printf("Error while running ocr: \n%+v", err)
 			return
 		}
 	}
@@ -39,7 +40,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 	var pages = make([]models.Page, pageCount)
 
 	for p := range pages {
-		log.Println(fmt.Sprintf("Annotating page: %d", p))
+		log.Printf("Annotating page: %d", p)
 
 		page := &pages[p]
 		page.DocumentId = docId
@@ -48,7 +49,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 
 		err := GetPageDimensions(page)
 		if err != nil {
-			log.Println(fmt.Sprintf("Error getting image dimensions: \n%+v", err))
+			log.Printf("Error getting image dimensions: \n%+v", err)
 			return
 		}
 
@@ -56,7 +57,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 		if ocrWords != nil {
 			serialisedOcr, err := json.Marshal(ocrWords[p])
 			if err != nil {
-				log.Println(fmt.Sprintf("Error serialising ocr data: \n%+v", err))
+				log.Printf("Error serialising ocr data: \n%+v", err)
 				return
 			}
 			page.OcrText = string(serialisedOcr)
@@ -64,13 +65,13 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 		predictions, err := RunDetectionOnPage(docId, p)
 		DrawBoundingBoxes(docId, p, &predictions, "original")
 		if err != nil {
-			log.Println(fmt.Sprintf("Error detecting segments: \n%+v", err))
+			log.Printf("Error detecting segments: \n%+v", err)
 			return
 		}
 		if shouldRunOcr {
-			page.Html = ParseHtmlAndAdjustDetection(&ocrWords[p], &predictions)
+			page.Html = ParseHtmlAndAdjustDetection(&ocrWords[p], &predictions, docId, p)
 		} else {
-			page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions)
+			page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions, docId, p)
 		}
 		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		page.Predictions = predictions
@@ -78,13 +79,13 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 
 	err = db.StorePages(&pages)
 	if err != nil {
-		log.Println(fmt.Sprintf("Error while calling core.db: \n%+v", err))
+		log.Printf("Error while calling core.db: \n%+v", err)
 		return
 	}
 
 	err = db.UpdateDocumentStatus(docId, "DONE")
 	if err != nil {
-		log.Println(fmt.Sprintf("Error while calling core.db: \n%+v", err))
+		log.Printf("Error while calling core.db: \n%+v", err)
 		return
 	}
 }
@@ -92,12 +93,12 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 func DrawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, suffix string) {
 	imgFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", docId, page))
 	if err != nil {
-		log.Panicln(fmt.Sprintf("Cannot open image: \n%+v", err))
+		log.Panicf("Cannot open image: \n%+v", err)
 	}
 	defer imgFile.Close()
 	img, err := jpeg.Decode(imgFile)
 	if err != nil {
-		log.Panicln(fmt.Sprintf("Cannot decode image: \n%+v", err))
+		log.Panicf("Cannot decode image: \n%+v", err)
 	}
 	rgba := image.NewRGBA(img.Bounds())
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{}, draw.Src)
@@ -111,6 +112,8 @@ func DrawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, 
 			gc.SetStrokeColor(colornames.Blue)
 		case "header":
 			gc.SetStrokeColor(colornames.Red)
+		case "illustration":
+			gc.SetStrokeColor(colornames.Yellow)
 		default:
 			gc.SetStrokeColor(colornames.Green)
 		}
@@ -177,7 +180,7 @@ func reprocessPages(docId int64, pages []int) {
 			log.Println(fmt.Sprintf("Could not fetch pdf text: \n%+v", err))
 			return
 		}
-		html := ParseHtmlAndAdjustDetection(&words, &predictions)
+		html := ParseHtmlAndAdjustDetection(&words, &predictions, docId, p)
 		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		err = db.UpdatePredictionsAndText(docId, p, &predictions, &html)
 		if err != nil {

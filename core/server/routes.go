@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"html/template"
 	"io"
 	"log"
@@ -18,6 +16,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 var tmpl *template.Template
@@ -44,15 +45,20 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Get("/document/{documentId}/{pageNum}/predictions", s.GetPredictions)
 	r.Post("/document/{documentId}/{pageNum}/predictions", s.SetPredictions)
 
-	tmpl = template.Must(template.ParseFS(web.Files,
+	funcMap := template.FuncMap{
+		"add": func(a, b int) int { return a + b },
+		"sub": func(a, b int) int { return a - b },
+	}
+
+	tmpl = template.Must(template.New("").Funcs(funcMap).ParseFS(web.Files,
 		"templates/documents.go.html",
 		"templates/annotate.go.html",
 		"templates/document.go.html",
 		"templates/document-loading.go.html",
 		"templates/nothing-to-annotate.go.html",
 		"templates/partial/head.go.html",
-		"templates/partial/document-row.go.html",
 		"templates/partial/page-status.go.html",
+		"templates/partial/document-rows.go.html",
 	))
 
 	return r
@@ -80,10 +86,16 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Header.Get("hx-current-url") != "" && !strings.Contains(r.Header.Get("hx-current-url"), "document") {
-		err = tmpl.ExecuteTemplate(w, "document-row.go.html", doc)
+		data := struct {
+			Documents []models.Document
+			Offset    int
+		}{
+			Documents: []models.Document{doc},
+			Offset:    0,
+		}
+		err = tmpl.ExecuteTemplate(w, "document-rows.go.html", data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-
 		}
 		return
 	}
@@ -225,12 +237,50 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) ListDocuments(w http.ResponseWriter, r *http.Request) {
-	documents, err := db.ListDocuments()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	limit := 10
+	offset := 0
+	search := ""
+
+	if r.URL.Query().Has("offset") {
+		parsedOffset, err := strconv.Atoi(r.URL.Query().Get("offset"))
+		if err == nil {
+			offset = parsedOffset
+		}
 	}
 
-	err = tmpl.ExecuteTemplate(w, "documents.go.html", documents)
+	if r.URL.Query().Has("search") {
+		search = r.URL.Query().Get("search")
+	}
+
+	documents, err := db.ListDocuments(limit, offset, search)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// If no documents returned and this is a pagination request, return empty response
+	if len(documents) == 0 && r.URL.Query().Has("offset") {
+		w.Header().Set("HX-Trigger", "endOfResults")
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	data := struct {
+		Documents []models.Document
+		Offset    int
+		Search    string
+	}{
+		Documents: documents,
+		Offset:    offset,
+		Search:    search,
+	}
+
+	template := "documents.go.html"
+	if r.Header.Get("HX-Trigger") == "search" || r.URL.Query().Has("offset") || r.URL.Query().Has("search") {
+		template = "document-rows.go.html"
+	}
+
+	err = tmpl.ExecuteTemplate(w, template, data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -313,7 +363,7 @@ func (s *Server) SetPredictions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var htmlText = pipeline.ParseHtmlAndAdjustDetection(&pdfText, &predictions)
+	var htmlText = pipeline.ParseHtmlAndAdjustDetection(&pdfText, &predictions, docId, pageNum)
 	err = db.UpdatePredictionsAndText(docId, pageNum, &predictions, &htmlText)
 	pipeline.DrawBoundingBoxes(docId, pageNum, &predictions, "prediction")
 	if err != nil {
@@ -347,7 +397,15 @@ func (s *Server) Retry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = tmpl.ExecuteTemplate(w, "document-row.go.html", doc)
+
+	data := struct {
+		Documents []models.Document
+		Offset    int
+	}{
+		Documents: []models.Document{doc},
+		Offset:    0,
+	}
+	err = tmpl.ExecuteTemplate(w, "document-rows.go.html", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -12,4 +12,6 @@ type Document struct {
 	InProgress    int
 	Validated     int
 	LocalFilePath string
+	IsLast        bool `json:"-"`
+	Offset        int  `json:"-"`
 }

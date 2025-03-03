@@ -1,0 +1,1135 @@
+[
+  {
+    "x": 58,
+    "y": 25,
+    "width": 431,
+    "height": 12,
+    "type": "header",
+    "text": "Food Notice: Maximum Residue Levels for Agricultural Compounds"
+  },
+  {
+    "x": 721,
+    "y": 25,
+    "width": 77,
+    "height": 12,
+    "type": "header",
+    "text": "7 October 2020"
+  },
+  {
+    "x": 58,
+    "y": 55,
+    "width": 453,
+    "height": 21,
+    "type": "header",
+    "text": "Schedule 1: Maximum Residue Levels for Agricultural Compounds"
+  },
+  {
+    "x": 58,
+    "y": 85,
+    "width": 719,
+    "height": 11,
+    "type": "paragraph",
+    "text": "NOTE: (*) indicates that the maximum residue level has been set at or about the limit of analytical quantification"
+  },
+  {
+    "x": 58,
+    "y": 113,
+    "width": 720,
+    "height": 421,
+    "type": "table",
+    "cells": [
+      [
+        {
+          "x": 58,
+          "y": 113,
+          "width": 68,
+          "height": 33,
+          "type": "cell",
+          "text": "Column 1"
+        },
+        {
+          "x": 126,
+          "y": 113,
+          "width": 96,
+          "height": 33,
+          "type": "cell",
+          "text": "Column 2"
+        },
+        {
+          "x": 222,
+          "y": 113,
+          "width": 195,
+          "height": 33,
+          "type": "cell",
+          "text": "Column 3"
+        },
+        {
+          "x": 417,
+          "y": 113,
+          "width": 161,
+          "height": 33,
+          "type": "cell",
+          "text": "Column 4"
+        },
+        {
+          "x": 578,
+          "y": 113,
+          "width": 200,
+          "height": 33,
+          "type": "cell",
+          "text": "Column 5"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 146,
+          "width": 68,
+          "height": 25,
+          "type": "cell",
+          "text": "Compound\nCommon Name"
+        },
+        {
+          "x": 126,
+          "y": 146,
+          "width": 96,
+          "height": 25,
+          "type": "cell",
+          "text": "Chemical Abstracts\nService (CAS) #"
+        },
+        {
+          "x": 222,
+          "y": 146,
+          "width": 195,
+          "height": 25,
+          "type": "cell",
+          "text": "Residue to which the maximum residue\nlevel applies"
+        },
+        {
+          "x": 417,
+          "y": 146,
+          "width": 161,
+          "height": 25,
+          "type": "cell",
+          "text": "Food"
+        },
+        {
+          "x": 578,
+          "y": 146,
+          "width": 200,
+          "height": 25,
+          "type": "cell",
+          "text": "Maximum Residue\nLevel (mg/kg)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 171,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 171,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 171,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 171,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Avocados"
+        },
+        {
+          "x": 578,
+          "y": 171,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02(*)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 189,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 189,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 189,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 189,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Bulb onions"
+        },
+        {
+          "x": 578,
+          "y": 189,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.01"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 207,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 207,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 207,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 207,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Cattle fat"
+        },
+        {
+          "x": 578,
+          "y": 207,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 225,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 225,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 225,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 225,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Cattle liver"
+        },
+        {
+          "x": 578,
+          "y": 225,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.015"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 243,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 243,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 243,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 243,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Cattle meat"
+        },
+        {
+          "x": 578,
+          "y": 243,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.01"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 261,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 261,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 261,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 261,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Green onions"
+        },
+        {
+          "x": 578,
+          "y": 261,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 279,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 279,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 279,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 279,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Kiwifruit"
+        },
+        {
+          "x": 578,
+          "y": 279,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02(*)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 297,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 297,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 297,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 297,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Pome fruits"
+        },
+        {
+          "x": 578,
+          "y": 297,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02(*)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 315,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 315,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 315,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 315,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Sheep fat"
+        },
+        {
+          "x": 578,
+          "y": 315,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.05"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 333,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 333,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 333,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 333,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Sheep kidney"
+        },
+        {
+          "x": 578,
+          "y": 333,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 351,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 351,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 351,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 351,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Sheep liver"
+        },
+        {
+          "x": 578,
+          "y": 351,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.025"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 369,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 369,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 369,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 369,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Sheep meat"
+        },
+        {
+          "x": 578,
+          "y": 369,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 387,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 387,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 387,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 387,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Strawberries"
+        },
+        {
+          "x": 578,
+          "y": 387,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.02(*)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 405,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Abamectin"
+        },
+        {
+          "x": 126,
+          "y": 405,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "71751-42-2"
+        },
+        {
+          "x": 222,
+          "y": 405,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Sum of: Avermectin B1a and avermectin B1b"
+        },
+        {
+          "x": 417,
+          "y": 405,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Tomatoes"
+        },
+        {
+          "x": 578,
+          "y": 405,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.1"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 423,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 423,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 423,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 423,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Avocados"
+        },
+        {
+          "x": 578,
+          "y": 423,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.1"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 441,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 441,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 441,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 441,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Boysenberries"
+        },
+        {
+          "x": 578,
+          "y": 441,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.1"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 459,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 459,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 459,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 459,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Cabbages"
+        },
+        {
+          "x": 578,
+          "y": 459,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "2"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 477,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 477,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 477,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 477,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Cauliflowers"
+        },
+        {
+          "x": 578,
+          "y": 477,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "2"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 495,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 495,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 495,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 495,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Citrus fruits"
+        },
+        {
+          "x": 578,
+          "y": 495,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "5"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 513,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 513,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 513,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 513,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Lettuce"
+        },
+        {
+          "x": 578,
+          "y": 513,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "2"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 531,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 531,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 531,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 531,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Tamarillos"
+        },
+        {
+          "x": 578,
+          "y": 531,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.5"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 549,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 549,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 549,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 549,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Tomatoes"
+        },
+        {
+          "x": 578,
+          "y": 549,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "1"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 567,
+          "width": 68,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 126,
+          "y": 567,
+          "width": 96,
+          "height": 18,
+          "type": "cell",
+          "text": "30560-19-1"
+        },
+        {
+          "x": 222,
+          "y": 567,
+          "width": 195,
+          "height": 18,
+          "type": "cell",
+          "text": "Acephate"
+        },
+        {
+          "x": 417,
+          "y": 567,
+          "width": 161,
+          "height": 18,
+          "type": "cell",
+          "text": "Any other food"
+        },
+        {
+          "x": 578,
+          "y": 567,
+          "width": 200,
+          "height": 18,
+          "type": "cell",
+          "text": "0.01(*)"
+        }
+      ],
+      [
+        {
+          "x": 58,
+          "y": 585,
+          "width": 68,
+          "height": 49,
+          "type": "cell",
+          "text": "Acibenzolar-s-methyl"
+        },
+        {
+          "x": 126,
+          "y": 585,
+          "width": 96,
+          "height": 49,
+          "type": "cell",
+          "text": "135158-54-2"
+        },
+        {
+          "x": 222,
+          "y": 585,
+          "width": 195,
+          "height": 49,
+          "type": "cell",
+          "text": "Sum of: Acibenzolar-s-methyl and\nAcibenzolar acid (CGA210007)\nExpressed as: Acibenzolar-s-methyl"
+        },
+        {
+          "x": 417,
+          "y": 585,
+          "width": 161,
+          "height": 49,
+          "type": "cell",
+          "text": "Kiwifruit"
+        },
+        {
+          "x": 578,
+          "y": 585,
+          "width": 200,
+          "height": 49,
+          "type": "cell",
+          "text": "0.02(*)"
+        }
+      ]
+    ]
+  }
+]

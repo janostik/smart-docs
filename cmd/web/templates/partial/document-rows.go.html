@@ -1,0 +1,51 @@
+{{- /*gotype: struct { Documents []smart-docs/core/models.Document; Offset int; Search string }*/ -}}
+{{range $i, $doc := .Documents }}
+    <tr {{if eq $i (sub (len $.Documents) 1)}}
+        hx-get="/?offset={{add $.Offset (len $.Documents)}}{{if ne $.Search ""}}{{printf "&search=%s" $.Search}}{{end}}"
+        hx-trigger="revealed"
+        hx-swap="afterend"
+        {{end}}>
+        <td>
+            <a href="/document/{{$doc.Id}}">{{$doc.Name}}</a>
+        </td>
+        <td>
+            {{$doc.UploadDate.Format "2006-01-02 15:04:05"}}
+        </td>
+        <td>
+            {{$doc.PageCount}}
+        </td>
+        <td>
+            {{$doc.InProgress}}
+        </td>
+        <td>
+            {{$doc.Validated}}
+        </td>
+        <td>
+            <div style="display: flex; gap: 4px">
+                <a class="btn-icon" href="/document/{{$doc.Id}}/content" download="{{$doc.Name}}.html">
+                    <img src="/assets/icons/download.svg">
+                </a>
+                <a class="btn-icon"
+                   hx-delete="/document/{{$doc.Id}}"
+                   hx-confirm="Are you sure? You will loose all training data"
+                   hx-target="closest tr"
+                   hx-swap="outerHTML swap:300ms">
+                    <img src="/assets/icons/trash.svg">
+                </a>
+                <a class="btn-icon {{if eq $doc.Status "PROCESSING"}}rotate{{end}}"
+                   {{if eq $doc.Status "DONE"}}
+                       hx-put="/document/{{$doc.Id}}/retry"
+                   {{end}}
+                   {{if eq $doc.Status "PROCESSING"}}
+                       hx-get="/document/{{$doc.Id}}"
+                       hx-trigger="revealed delay:3s"
+                       disabled
+                   {{end}}
+                   hx-target="closest tr"
+                   hx-swap="outerHTML">
+                    <img src="/assets/icons/rotate.svg">
+                </a>
+            </div>
+        </td>
+    </tr>
+{{end}} 
