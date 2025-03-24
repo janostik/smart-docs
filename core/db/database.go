@@ -31,6 +31,12 @@ func New() Service {
 	if dbInstance != nil {
 		return dbInstance
 	}
+
+	// Create data directory if it doesn't exist
+	if err := os.MkdirAll("./data", os.ModePerm); err != nil {
+		log.Fatal(err)
+	}
+
 	db, err := sql.Open("sqlite3", "./data/documents.sql")
 	if err != nil {
 		// This will not be connection error
