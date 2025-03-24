@@ -170,7 +170,7 @@ article table td {
 /**
 FILE UPLOAD
  */
-form {
+form.file-upload {
     position: relative;
     background: white;
     display: flex;
@@ -180,15 +180,15 @@ form {
     padding: 16px;
 }
 
-form label {
+form.file-upload label {
     color: #82add2;
 }
 
-form.is-dragover {
+form.file-upload.is-dragover {
     outline-color: #82add2;
 }
 
-form input[type="file"] {
+form.file-upload input[type="file"] {
     width: 0;
     height: 0;
     opacity: 0;
@@ -197,7 +197,7 @@ form input[type="file"] {
     z-index: -1;
 }
 
-form .form-group {
+form.file-upload .form-group {
     display: flex;
     flex-direction: row;
     gap: 16px;
@@ -205,13 +205,13 @@ form .form-group {
     justify-content: center;
 }
 
-form svg {
+form.file-upload svg {
     height: 20px;
     fill: #82add2;
     display: block;
 }
 
-form.is-uploading .form-group {
+form.file-upload.is-uploading .form-group {
     visibility: hidden;
 }
 
@@ -220,7 +220,7 @@ form.is-uploading .form-group {
     font-style: italic;
 }
 
-form.is-uploading .loading-indicator {
+form.file-upload.is-uploading .loading-indicator {
     display: block;
     position: absolute;
     top: 50%;
