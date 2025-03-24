@@ -9,14 +9,53 @@ import (
 	"log"
 	"os"
 	"smart-docs/core/db"
+	"smart-docs/core/mistral"
 	"smart-docs/core/models"
+	"smart-docs/core/pipeline/markdown"
 
 	"github.com/llgcode/draw2d/draw2dimg"
 	"golang.org/x/image/colornames"
 )
 
-func ProcessPdf(docId int64, shouldRunOcr bool) {
-	pageCount, words, err := storeImagesAndExtractPages(docId)
+func ProcessPdf(docId int64, shouldRunOcr bool, mode string) {
+	var pageCount int
+	var words [][]models.WordData
+	var ocrWords [][]models.WordData
+	var markdownPages []string
+	var err error
+
+	if mode == "mistral" {
+		client, err := mistral.NewClient()
+		if err != nil {
+			log.Printf("Error creating Mistral client: \n%+v", err)
+			return
+		}
+
+		filePath := fmt.Sprintf("data/files/%d.pdf", docId)
+		fileId, err := client.UploadFile(filePath)
+		if err != nil {
+			log.Printf("Error uploading file to Mistral: \n%+v", err)
+			return
+		}
+
+		err = db.UpdateMistralFileId(docId, fileId)
+		if err != nil {
+			log.Printf("Error updating mistral_file_id: \n%+v", err)
+			return
+		}
+
+		markdownPages, err = client.ParseFile(fileId)
+		if err != nil {
+			log.Printf("Error parsing file with Mistral: \n%+v", err)
+			return
+		}
+
+		pageCount = len(markdownPages)
+		words = make([][]models.WordData, pageCount)
+		ocrWords = make([][]models.WordData, pageCount)
+	}
+
+	pageCount, words, err = storeImagesAndExtractPages(docId)
 	if err != nil {
 		log.Printf("Error while extracting images: \n%+v", err)
 		return
@@ -28,8 +67,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 		return
 	}
 
-	var ocrWords [][]models.WordData
-	if shouldRunOcr {
+	if shouldRunOcr && mode == "manual" {
 		ocrWords, err = DetectAsyncDocumentURI(docId, pageCount)
 		if err != nil {
 			log.Printf("Error while running ocr: \n%+v", err)
@@ -62,18 +100,31 @@ func ProcessPdf(docId int64, shouldRunOcr bool) {
 			}
 			page.OcrText = string(serialisedOcr)
 		}
-		predictions, err := RunDetectionOnPage(docId, p)
-		DrawBoundingBoxes(docId, p, &predictions, "original")
-		if err != nil {
-			log.Printf("Error detecting segments: \n%+v", err)
-			return
+
+		var predictions []models.Prediction
+		if mode == "manual" {
+			predictions, err = RunDetectionOnPage(docId, p)
+			DrawBoundingBoxes(docId, p, &predictions, "original")
+			if err != nil {
+				log.Printf("Error detecting segments: \n%+v", err)
+				return
+			}
+			if shouldRunOcr {
+				page.Html = ParseHtmlAndAdjustDetection(&ocrWords[p], &predictions, docId, p)
+			} else {
+				page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions, docId, p)
+			}
+			DrawBoundingBoxes(docId, p, &predictions, "prediction")
+		} else if mode == "mistral" {
+			predictions = []models.Prediction{}
+			page.Md = markdownPages[p]
+			html, err := markdown.ConvertMarkdownToHTML(page.Md)
+			if err != nil {
+				log.Printf("Error converting to html: \n%+v", err)
+				return
+			}
+			page.Html = html
 		}
-		if shouldRunOcr {
-			page.Html = ParseHtmlAndAdjustDetection(&ocrWords[p], &predictions, docId, p)
-		} else {
-			page.Html = ParseHtmlAndAdjustDetection(&words[p], &predictions, docId, p)
-		}
-		DrawBoundingBoxes(docId, p, &predictions, "prediction")
 		page.Predictions = predictions
 	}
 

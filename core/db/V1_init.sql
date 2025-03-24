@@ -5,7 +5,9 @@ create table if not exists documents
     status       text,
     upload_date  datetime,
     ocr_required bool,
-    page_count   integer
+    page_count   integer,
+    mode         text not null default 'manual' check (mode in ('mistral', 'manual')),
+    mistral_file_id text
 );
 
 create table if not exists pages
@@ -18,6 +20,7 @@ create table if not exists pages
     status      text,
     predictions text,
     html        text,
+    md          text,
     width       integer,
     height      integer,
     foreign key (document_id) references documents (id) on delete cascade

@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"sort"
 	"strconv"
 	"time"
 
@@ -36,7 +39,93 @@ func New() Service {
 	dbInstance = &service{
 		db: db,
 	}
+
+	// Run migrations
+	if err := dbInstance.runMigrations(); err != nil {
+		log.Fatal(err)
+	}
+
 	return dbInstance
+}
+
+func (s *service) runMigrations() error {
+	// Create migrations table if it doesn't exist
+	_, err := s.db.Exec(`
+		CREATE TABLE IF NOT EXISTS migrations (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("failed to create migrations table: %v", err)
+	}
+
+	// Get list of applied migrations
+	rows, err := s.db.Query("SELECT name FROM migrations")
+	if err != nil {
+		return fmt.Errorf("failed to query migrations: %v", err)
+	}
+	defer rows.Close()
+
+	applied := make(map[string]bool)
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return fmt.Errorf("failed to scan migration name: %v", err)
+		}
+		applied[name] = true
+	}
+
+	// Get list of migration files
+	files, err := filepath.Glob("core/db/V*.sql")
+	if err != nil {
+		return fmt.Errorf("failed to glob migration files: %v", err)
+	}
+
+	// Sort files to ensure correct order
+	sort.Strings(files)
+
+	// Run pending migrations
+	for _, file := range files {
+		name := filepath.Base(file)
+		if applied[name] {
+			continue
+		}
+
+		log.Printf("Running migration: %s", name)
+		content, err := os.ReadFile(file)
+		if err != nil {
+			return fmt.Errorf("failed to read migration file %s: %v", file, err)
+		}
+
+		// Begin transaction
+		tx, err := s.db.Begin()
+		if err != nil {
+			return fmt.Errorf("failed to begin transaction: %v", err)
+		}
+
+		// Execute migration
+		if _, err := tx.Exec(string(content)); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to execute migration %s: %v", name, err)
+		}
+
+		// Record migration
+		if _, err := tx.Exec("INSERT INTO migrations (name) VALUES (?)", name); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to record migration %s: %v", name, err)
+		}
+
+		// Commit transaction
+		if err := tx.Commit(); err != nil {
+			return fmt.Errorf("failed to commit migration %s: %v", name, err)
+		}
+
+		log.Printf("Successfully applied migration: %s", name)
+	}
+
+	return nil
 }
 
 func (s *service) Health() map[string]string {

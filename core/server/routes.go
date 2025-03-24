@@ -194,6 +194,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	shouldRunOcr := r.FormValue("ocr") == "on"
+	mode := r.FormValue("mode")
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		log.Println(err.Error())
@@ -208,6 +209,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		UploadDate:  time.Now(),
 		OcrRequired: false,
 		Status:      "PROCESSING",
+		Mode:        mode,
 	}
 	docId, err := db.StoreDocument(&doc)
 	if err != nil {
@@ -231,7 +233,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go pipeline.ProcessPdf(docId, shouldRunOcr)
+	go pipeline.ProcessPdf(docId, shouldRunOcr, mode)
 
 	w.Header().Add("HX-Redirect", fmt.Sprintf("/document/%d", doc.Id))
 }

@@ -14,4 +14,6 @@ type Document struct {
 	LocalFilePath string
 	IsLast        bool `json:"-"`
 	Offset        int  `json:"-"`
+	Mode          string
+	MistralFileId *string
 }

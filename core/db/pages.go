@@ -29,9 +29,10 @@ func StorePages(pages *[]models.Page) error {
 		    status,
 			predictions,
 			html,
+		    md,
 		    width, 
 		    height
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return err
@@ -48,7 +49,7 @@ func StorePages(pages *[]models.Page) error {
 			log.Println(fmt.Sprintf("Error serialising pdf bboxes: \n%+v", err))
 		}
 
-		_, err = stmt.Exec(page.DocumentId, page.PageNum, serialisedWords, page.OcrText, page.Status, serialisedPredictions, page.Html, page.Width, page.Height)
+		_, err = stmt.Exec(page.DocumentId, page.PageNum, serialisedWords, page.OcrText, page.Status, serialisedPredictions, page.Html, page.Md, page.Width, page.Height)
 		if err != nil {
 			return err
 		}
@@ -108,6 +109,7 @@ func LoadPage(docId int64, pageNum int, page *models.PageView) error {
 		    p.id, 
 		    doc.name,
 		    doc.id,
+		    doc.mode,
 		    p.status,
 		    p.html,
 		    p.width,
@@ -124,6 +126,7 @@ func LoadPage(docId int64, pageNum int, page *models.PageView) error {
 		&page.Id,
 		&page.DocumentName,
 		&page.DocumentId,
+		&page.DocumentMode,
 		&page.Status,
 		&htmlString,
 		&page.Width,
