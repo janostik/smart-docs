@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"smart-docs/cmd/web"
+	"smart-docs/core/auth"
 	"smart-docs/core/db"
 	"smart-docs/core/models"
 	"smart-docs/core/pipeline"
@@ -56,12 +57,13 @@ func (s *Server) RegisterRoutes() http.Handler {
 		"templates/document.go.html",
 		"templates/document-loading.go.html",
 		"templates/nothing-to-annotate.go.html",
+		"templates/login.go.html",
 		"templates/partial/head.go.html",
 		"templates/partial/page-status.go.html",
 		"templates/partial/document-rows.go.html",
 	))
 
-	return r
+	return auth.AuthMiddleware(tmpl, r)
 }
 
 func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
