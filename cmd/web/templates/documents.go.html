@@ -1,233 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
 {{template "head"}}
+
 <body>
-{{- /*gotype: struct { Documents []smart-docs/core/models.Document; Offset int; Search string }*/ -}}
-<nav>
-    <a href="/" class="active">Documents</a>
-    <a href="/annotate">Annotate Docs</a>
-</nav>
+    {{- /*gotype: struct { Documents []smart-docs/core/models.Document; Offset int; Search string }*/ -}}
+    <nav>
+        <a href="/" class="active">Documents</a>
+        <a href="/annotate">Annotate Docs</a>
+    </nav>
 
-<form id='form' hx-encoding='multipart/form-data' hx-post='/upload'>
-    <input type="file" name="file" id="file"/>
-    <div class="form-group" style="flex-grow: 1">
-        <svg xmlns="http://www.w3.org/2000/svg" width="50" height="43" viewBox="0 0 50 43">
-            <path d="M48.4 26.5c-.9 0-1.7.7-1.7 1.7v11.6h-43.3v-11.6c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v13.2c0 .9.7 1.7 1.7 1.7h46.7c.9 0 1.7-.7 1.7-1.7v-13.2c0-1-.7-1.7-1.7-1.7zm-24.5 6.1c.3.3.8.5 1.2.5.4 0 .9-.2 1.2-.5l10-11.6c.7-.7.7-1.7 0-2.4s-1.7-.7-2.4 0l-7.1 8.3v-25.3c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v25.3l-7.1-8.3c-.7-.7-1.7-.7-2.4 0s-.7 1.7 0 2.4l10 11.6z"></path>
-        </svg>
-        <label for="file"><strong>Choose a file</strong> or drag it here.</label>
+    <form id='form' hx-encoding='multipart/form-data' hx-post='/upload'>
+        <input type="file" name="file" id="file" />
+        <div class="form-group" style="flex-grow: 1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="50" height="43" viewBox="0 0 50 43">
+                <path
+                    d="M48.4 26.5c-.9 0-1.7.7-1.7 1.7v11.6h-43.3v-11.6c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v13.2c0 .9.7 1.7 1.7 1.7h46.7c.9 0 1.7-.7 1.7-1.7v-13.2c0-1-.7-1.7-1.7-1.7zm-24.5 6.1c.3.3.8.5 1.2.5.4 0 .9-.2 1.2-.5l10-11.6c.7-.7.7-1.7 0-2.4s-1.7-.7-2.4 0l-7.1 8.3v-25.3c0-.9-.7-1.7-1.7-1.7s-1.7.7-1.7 1.7v25.3l-7.1-8.3c-.7-.7-1.7-.7-2.4 0s-.7 1.7 0 2.4l10 11.6z">
+                </path>
+            </svg>
+            <label for="file"><strong>Choose a file</strong> or drag it here.</label>
+        </div>
+        <div class="form-group">
+            <input type="checkbox" name="ocr" id="ocr" />
+            <label for="ocr">Should run OCR</label>
+        </div>
+        <div class="form-group">
+            <select name="mode" id="mode">
+                <option value="mistral">Use Mistral</option>
+                <option value="manual">Manual annotation</option>
+            </select>
+        </div>
+        <button style="display: none" type="submit">Upload</button>
+        <div class="loading-indicator">Uploading…</div>
+    </form>
+
+    <div class="search-container">
+        <input type="text" id="search" name="search" placeholder="Search documents..." hx-get="/"
+            hx-trigger="keyup changed delay:500ms, search" hx-target="#document-rows" hx-include="[name='search']"
+            hx-swap="innerHTML" hx-indicator=".search-indicator" />
+        <div class="search-indicator htmx-indicator">Searching...</div>
     </div>
-    <div class="form-group">
-        <input type="checkbox" name="ocr" id="ocr"/>
-        <label for="ocr">Should run OCR</label>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Document Name</th>
+                    <th>Uploaded On</th>
+                    <th>Pages</th>
+                    <th>In Progress</th>
+                    <th>Validated</th>
+                    <th>Mode</th>
+                    <th>-</th>
+                </tr>
+            </thead>
+            <tbody id="document-rows">
+                {{range $i, $doc := .Documents }}
+                <tr {{if eq $i (sub (len $.Documents) 1)}}
+                    hx-get="/?offset={{add $.Offset (len $.Documents)}}{{if ne $.Search ""}}{{printf " &search=%s"
+                    $.Search}}{{end}}" hx-trigger="revealed" hx-swap="afterend" {{end}}>
+                    <td>
+                        <a href="/document/{{$doc.Id}}">{{$doc.Name}}</a>
+                    </td>
+                    <td>
+                        {{$doc.UploadDate.Format "2006-01-02 15:04:05"}}
+                    </td>
+                    <td>
+                        {{$doc.PageCount}}
+                    </td>
+                    <td>
+                        {{$doc.InProgress}}
+                    </td>
+                    <td>
+                        {{$doc.Validated}}
+                    </td>
+                    <td>
+                        {{$doc.Mode}}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px">
+                            <a class="btn-icon" href="/document/{{$doc.Id}}/content" download="{{$doc.Name}}.html">
+                                <img src="/assets/icons/download.svg">
+                            </a>
+                            <a class="btn-icon" hx-delete="/document/{{$doc.Id}}"
+                                hx-confirm="Are you sure? You will loose all training data" hx-target="closest tr"
+                                hx-swap="outerHTML swap:300ms">
+                                <img src="/assets/icons/trash.svg">
+                            </a>
+                            <a class="btn-icon {{if eq $doc.Status " PROCESSING"}}rotate{{end}}" {{if eq
+                                $doc.Status "DONE" }} hx-put="/document/{{$doc.Id}}/retry" {{end}} {{if eq
+                                $doc.Status "PROCESSING" }} hx-get="/document/{{$doc.Id}}"
+                                hx-trigger="revealed delay:3s" disabled {{end}} hx-target="closest tr"
+                                hx-swap="outerHTML">
+                                <img src="/assets/icons/rotate.svg">
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {{end}}
+            </tbody>
+        </table>
     </div>
-    <button style="display: none" type="submit">Upload</button>
-    <div class="loading-indicator">Uploading…</div>
-</form>
 
-<div class="search-container">
-    <input type="text" 
-           id="search"
-           name="search" 
-           placeholder="Search documents..." 
-           hx-get="/"
-           hx-trigger="keyup changed delay:500ms, search"
-           hx-target="#document-rows"
-           hx-include="[name='search']"
-           hx-swap="innerHTML"
-           hx-indicator=".search-indicator"/>
-    <div class="search-indicator htmx-indicator">Searching...</div>
-</div>
+    <script>
+        'use strict';
 
-<div class="table-container">
-    <table class="data-table">
-        <thead>
-        <tr>
-            <th>Document Name</th>
-            <th>Uploaded On</th>
-            <th>Pages</th>
-            <th>In Progress</th>
-            <th>Validated</th>
-            <th>-</th>
-        </tr>
-        </thead>
-        <tbody id="document-rows">
-        {{range $i, $doc := .Documents }}
-            <tr {{if eq $i (sub (len $.Documents) 1)}}
-                hx-get="/?offset={{add $.Offset (len $.Documents)}}{{if ne $.Search ""}}{{printf "&search=%s" $.Search}}{{end}}"
-                hx-trigger="revealed"
-                hx-swap="afterend"
-                {{end}}>
-                <td>
-                    <a href="/document/{{$doc.Id}}">{{$doc.Name}}</a>
-                </td>
-                <td>
-                    {{$doc.UploadDate.Format "2006-01-02 15:04:05"}}
-                </td>
-                <td>
-                    {{$doc.PageCount}}
-                </td>
-                <td>
-                    {{$doc.InProgress}}
-                </td>
-                <td>
-                    {{$doc.Validated}}
-                </td>
-                <td>
-                    <div style="display: flex; gap: 4px">
-                        <a class="btn-icon" href="/document/{{$doc.Id}}/content" download="{{$doc.Name}}.html">
-                            <img src="/assets/icons/download.svg">
-                        </a>
-                        <a class="btn-icon"
-                           hx-delete="/document/{{$doc.Id}}"
-                           hx-confirm="Are you sure? You will loose all training data"
-                           hx-target="closest tr"
-                           hx-swap="outerHTML swap:300ms">
-                            <img src="/assets/icons/trash.svg">
-                        </a>
-                        <a class="btn-icon {{if eq $doc.Status "PROCESSING"}}rotate{{end}}"
-                           {{if eq $doc.Status "DONE"}}
-                               hx-put="/document/{{$doc.Id}}/retry"
-                           {{end}}
-                           {{if eq $doc.Status "PROCESSING"}}
-                               hx-get="/document/{{$doc.Id}}"
-                               hx-trigger="revealed delay:3s"
-                               disabled
-                           {{end}}
-                           hx-target="closest tr"
-                           hx-swap="outerHTML">
-                            <img src="/assets/icons/rotate.svg">
-                        </a>
-                    </div>
-                </td>
-            </tr>
-        {{end}}
-        </tbody>
-    </table>
-</div>
+        ; (function (document) {
+            let form = document.querySelector('form');
+            let input = form.querySelector('input[type="file"]');
+            let searchInput = document.querySelector('#search');
 
-<script>
-    'use strict';
-
-    ;(function (document) {
-        let form = document.querySelector('form');
-        let input = form.querySelector('input[type="file"]');
-        let searchInput = document.querySelector('#search');
-
-        function triggerFormSubmit() {
-            let event = new Event('submit', { bubbles: true, cancelable: true });
-            form.dispatchEvent(event);
-        }
-
-        input.addEventListener('change', function (e) {
-            triggerFormSubmit();
-        });
-
-        ['drag', 'dragstart', 'dragend', 'dragover', 'dragenter', 'dragleave', 'drop'].forEach(function (event) {
-            form.addEventListener(event, function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        });
-        ['dragover', 'dragenter'].forEach(function (event) {
-            form.addEventListener(event, function () {
-                form.classList.add('is-dragover');
-            });
-        });
-        ['dragleave', 'dragend', 'drop'].forEach(function (event) {
-            form.addEventListener(event, function () {
-                form.classList.remove('is-dragover');
-            });
-        });
-
-        form.addEventListener('drop', function (e) {
-            let files = e.dataTransfer.files;
-            if (files.length > 0) {
-                input.files = files;
-                triggerFormSubmit();
+            function triggerFormSubmit() {
+                let event = new Event('submit', { bubbles: true, cancelable: true });
+                form.dispatchEvent(event);
             }
-        });
 
-        htmx.on('#form', 'htmx:xhr:loadstart', function (evt) {
-            form.classList.add('is-uploading');
-        });
+            input.addEventListener('change', function (e) {
+                triggerFormSubmit();
+            });
 
-        htmx.on('#form', 'htmx:xhr:loadend', function (evt) {
-            form.classList.remove('is-uploading');
-        });
+            ['drag', 'dragstart', 'dragend', 'dragover', 'dragenter', 'dragleave', 'drop'].forEach(function (event) {
+                form.addEventListener(event, function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            });
+            ['dragover', 'dragenter'].forEach(function (event) {
+                form.addEventListener(event, function () {
+                    form.classList.add('is-dragover');
+                });
+            });
+            ['dragleave', 'dragend', 'drop'].forEach(function (event) {
+                form.addEventListener(event, function () {
+                    form.classList.remove('is-dragover');
+                });
+            });
 
-        htmx.on('#form', 'htmx:xhr:progress', function (evt) {
-            htmx.find('.box').classList.add("progress-" + (evt.detail.loaded / evt.detail.total * 100))
-        });
-
-        // Update search query for next page load
-        searchInput.addEventListener('keyup', function(evt) {
-            let searchQuery = evt.target.value || '';
-            document.querySelectorAll('[hx-get]').forEach(el => {
-                if (el.getAttribute('hx-get').includes('offset=')) {
-                    let url = el.getAttribute('hx-get').split('&')[0];
-                    if (searchQuery) {
-                        url += '&search=' + encodeURIComponent(searchQuery);
-                    }
-                    el.setAttribute('hx-get', url);
+            form.addEventListener('drop', function (e) {
+                let files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    triggerFormSubmit();
                 }
             });
-        });
-    }(document));
-</script>
 
-<style>
+            htmx.on('#form', 'htmx:xhr:loadstart', function (evt) {
+                form.classList.add('is-uploading');
+            });
 
-.search-container {
-    position: relative;
-}
+            htmx.on('#form', 'htmx:xhr:loadend', function (evt) {
+                form.classList.remove('is-uploading');
+            });
 
-.search-container input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 0;
-    font-size: 16px;
-}
+            htmx.on('#form', 'htmx:xhr:progress', function (evt) {
+                htmx.find('.box').classList.add("progress-" + (evt.detail.loaded / evt.detail.total * 100))
+            });
 
-.search-indicator {
-    display: none;
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #666;
-}
+            // Update search query for next page load
+            searchInput.addEventListener('keyup', function (evt) {
+                let searchQuery = evt.target.value || '';
+                document.querySelectorAll('[hx-get]').forEach(el => {
+                    if (el.getAttribute('hx-get').includes('offset=')) {
+                        let url = el.getAttribute('hx-get').split('&')[0];
+                        if (searchQuery) {
+                            url += '&search=' + encodeURIComponent(searchQuery);
+                        }
+                        el.setAttribute('hx-get', url);
+                    }
+                });
+            });
+        }(document));
+    </script>
 
-.search-indicator.htmx-indicator {
-    display: inline;
-}
+    <style>
+        .search-container {
+            position: relative;
+        }
 
-.table-container {
-    position: relative;
-}
+        .search-container input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 0;
+            font-size: 16px;
+        }
 
-.table-container table {
-    width: 100%;
-}
+        .search-indicator {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #666;
+        }
 
-.table-container table td:first-child, .table-container table th:first-child {
-    max-width: 50vw;
-    overflow: hidden;
-}
+        .search-indicator.htmx-indicator {
+            display: inline;
+        }
 
-.table-container table td, .table-container table th {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+        .table-container {
+            position: relative;
+        }
 
-.table-container table td:first-child a {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: block;
-}
+        .table-container table {
+            width: 100%;
+        }
 
-</style>
+        .table-container table td:first-child,
+        .table-container table th:first-child {
+            max-width: 50vw;
+            overflow: hidden;
+        }
+
+        .table-container table td,
+        .table-container table th {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .table-container table td:first-child a {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: block;
+        }
+    </style>
 </body>
+
 </html>

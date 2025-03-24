@@ -46,14 +46,18 @@
 </section>
 
 {{ define "page" }}
-    <img src="/images/{{.DocumentId}}/{{.PageNum}}.prediction.jpg"  alt="Preview of page {{.PageNum}}" />
+    {{ if eq .DocumentMode "manual"}}
+        <img src="/images/{{.DocumentId}}/{{.PageNum}}.prediction.jpg" alt="Preview of page {{.PageNum}}"/>
+    {{else}}
+        <img src="/images/{{.DocumentId}}/{{.PageNum}}.jpg" alt="Preview of page {{.PageNum}}"/>
+    {{end}}
     <article>
         {{.Html}}
     </article>
 {{ end }}
 
 <script>
-    document.addEventListener('keydown', function(event) {
+    document.addEventListener('keydown', function (event) {
         if (event.key === 'ArrowLeft') {
             const leftChevron = document.querySelector('a#previous');
             if (leftChevron instanceof HTMLAnchorElement) {

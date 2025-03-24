@@ -6,3 +6,4 @@
 /cmd/web/assets/annotator/browser/
 /data/images/
 /cmd/web/assets/annotator/
+.env

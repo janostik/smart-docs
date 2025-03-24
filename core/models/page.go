@@ -47,6 +47,7 @@ type Page struct {
 	Status      string
 	Predictions []Prediction
 	Html        string
+	Md          string
 	Width       int
 	Height      int
 }
@@ -55,6 +56,7 @@ type PageView struct {
 	Id              int64
 	DocumentName    string
 	DocumentId      int64
+	DocumentMode    string
 	Status          string
 	PageNum         int
 	NextPage        int
