@@ -91,9 +91,11 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 		data := struct {
 			Documents []models.Document
 			Offset    int
+			Search    string
 		}{
 			Documents: []models.Document{doc},
 			Offset:    0,
+			Search:    "",
 		}
 		err = tmpl.ExecuteTemplate(w, "document-rows.go.html", data)
 		if err != nil {
@@ -405,9 +407,11 @@ func (s *Server) Retry(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Documents []models.Document
 		Offset    int
+		Search    string
 	}{
 		Documents: []models.Document{doc},
 		Offset:    0,
+		Search:    "",
 	}
 	err = tmpl.ExecuteTemplate(w, "document-rows.go.html", data)
 	if err != nil {
