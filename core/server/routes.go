@@ -264,8 +264,8 @@ func (s *Server) ListDocuments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If no documents returned and this is a pagination request, return empty response
-	if len(documents) == 0 && r.URL.Query().Has("offset") {
+	// If no documents returned or we have fewer documents than limit (meaning we've reached the end)
+	if (len(documents) == 0 || len(documents) < limit) && r.URL.Query().Has("offset") {
 		w.Header().Set("HX-Trigger", "endOfResults")
 		w.WriteHeader(http.StatusNoContent)
 		return
