@@ -36,7 +36,7 @@ type PredictionResponse struct {
 }
 
 func GetPageDimensions(page *models.Page) error {
-	imageFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", page.DocumentId, page.PageNum))
+	imageFile, err := os.Open(fmt.Sprintf("./data/images/%d/%d.jpg", page.DocumentId, page.PageNum))
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func GetPageDimensions(page *models.Page) error {
 
 func RunDetectionOnPage(docId int64, page int) ([]models.Prediction, error) {
 
-	imageFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", docId, page))
+	imageFile, err := os.Open(fmt.Sprintf("./data/images/%d/%d.jpg", docId, page))
 	if err != nil {
 		return nil, err
 	}
