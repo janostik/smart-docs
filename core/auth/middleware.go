@@ -22,6 +22,10 @@ func ValidateAPIKey(apiKey string) bool {
 	return apiKey == os.Getenv("API_KEY")
 }
 
+func IsSecured() bool {
+	return os.Getenv("API_KEY") != ""
+}
+
 func SetAPICookie(w http.ResponseWriter, apiKey string) {
 	value := map[string]string{
 		"api_key": apiKey,
@@ -61,6 +65,11 @@ func GetAPICookie(r *http.Request) (string, bool) {
 
 func AuthMiddleware(tmpl *template.Template, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !IsSecured() {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		// Skip authentication for static assets and health check
 		if strings.HasPrefix(r.URL.Path, "/assets/") ||
 			strings.HasPrefix(r.URL.Path, "/images/") ||

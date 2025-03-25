@@ -7,18 +7,13 @@ require (
 	cloud.google.com/go/vision/v2 v2.9.2
 	github.com/gen2brain/go-fitz v1.23.7
 	github.com/go-chi/chi/v5 v5.0.14
+	github.com/gorilla/securecookie v1.1.2
 	github.com/llgcode/draw2d v0.0.0-20240627062922-0ed1ff131195
 	github.com/mattn/go-sqlite3 v1.14.22
-	github.com/tenkoh/goldmark-img64 v0.1.2
 	golang.org/x/image v0.18.0
 )
 
-require github.com/gorilla/securecookie v1.1.2 // indirect
-
-require (
-	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/joho/godotenv v1.5.1
-)
+require github.com/joho/godotenv v1.5.1
 
 require (
 	cel.dev/expr v0.16.1 // indirect
