@@ -3,12 +3,14 @@ package pipeline
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gen2brain/go-fitz"
 	"image/jpeg"
-	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"smart-docs/core/models"
+	"smart-docs/scripts"
+
+	"github.com/gen2brain/go-fitz"
 )
 
 type PdfWords struct {
@@ -58,16 +60,29 @@ func storeImagesAndExtractPages(documentId int64) (int, [][]models.WordData, err
 }
 
 func extractText(pdfPath string) ([][]models.WordData, error) {
-	cmd := exec.Command("python3", "scripts/extract_text_with_bboxes.py", pdfPath)
+	scriptContent, err := scripts.Files.ReadFile("extract_text_with_bboxes.py")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read embedded script: %v", err)
+	}
+
+	tmpDir := os.TempDir()
+	tmpScript := filepath.Join(tmpDir, "extract_text_with_bboxes.py")
+
+	if err := os.WriteFile(tmpScript, scriptContent, 0644); err != nil {
+		return nil, fmt.Errorf("failed to write temporary script: %v", err)
+	}
+	defer os.Remove(tmpScript)
+
+	cmd := exec.Command("python3", tmpScript, pdfPath)
 
 	output, err := cmd.Output()
 	if err != nil {
-		log.Fatalf("Failed to run Python script: %v", err)
+		return nil, fmt.Errorf("failed to run Python script: %v", err)
 	}
 
 	var data [][]PdfWords
 	if err := json.Unmarshal(output, &data); err != nil {
-		log.Fatalf("Failed to parse JSON: %v", err)
+		return nil, fmt.Errorf("failed to parse JSON: %v", err)
 	}
 
 	pages := make([][]models.WordData, len(data))
