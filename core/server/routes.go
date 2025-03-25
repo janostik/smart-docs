@@ -219,7 +219,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filePath := fmt.Sprintf("data/files/%d.pdf", docId)
+	filePath := fmt.Sprintf("./data/files/%d.pdf", docId)
 	dest, err := os.Create(filePath)
 	if err != nil {
 		log.Println(err.Error())

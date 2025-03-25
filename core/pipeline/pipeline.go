@@ -31,7 +31,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool, mode string) {
 			return
 		}
 
-		filePath := fmt.Sprintf("data/files/%d.pdf", docId)
+		filePath := fmt.Sprintf("./data/files/%d.pdf", docId)
 		fileId, err := client.UploadFile(filePath)
 		if err != nil {
 			log.Printf("Error uploading file to Mistral: \n%+v", err)
@@ -142,7 +142,7 @@ func ProcessPdf(docId int64, shouldRunOcr bool, mode string) {
 }
 
 func DrawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, suffix string) {
-	imgFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", docId, page))
+	imgFile, err := os.Open(fmt.Sprintf("./data/images/%d/%d.jpg", docId, page))
 	if err != nil {
 		log.Panicf("Cannot open image: \n%+v", err)
 	}
@@ -186,7 +186,7 @@ func DrawBoundingBoxes(docId int64, page int, predictions *[]models.Prediction, 
 			}
 		}
 	}
-	outFile, err := os.Create(fmt.Sprintf("data/images/%d/%d.%s.jpg", docId, page, suffix))
+	outFile, err := os.Create(fmt.Sprintf("./data/images/%d/%d.%s.jpg", docId, page, suffix))
 	if err != nil {
 		log.Panicln(fmt.Sprintf("Cannot open image: \n%+v", err))
 	}

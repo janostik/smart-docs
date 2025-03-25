@@ -133,7 +133,7 @@ func uploadPdf(jobId string, docId int64, ctx context.Context, client *storage.C
 	bucket := client.Bucket(googleOcrBucket)
 	remoteFile := bucket.Object(fmt.Sprintf("%s/input.pdf", jobId))
 
-	file, err := os.Open(fmt.Sprintf("data/files/%d.pdf", docId))
+	file, err := os.Open(fmt.Sprintf("./data/files/%d.pdf", docId))
 	if err != nil {
 		return err
 	}

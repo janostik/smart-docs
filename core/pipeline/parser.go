@@ -54,7 +54,7 @@ func (s *Segment) realign() {
 }
 
 func extractAndEncodeImage(docId int64, pageNum int, prediction *models.Prediction) (string, error) {
-	imgFile, err := os.Open(fmt.Sprintf("data/images/%d/%d.jpg", docId, pageNum))
+	imgFile, err := os.Open(fmt.Sprintf("./data/images/%d/%d.jpg", docId, pageNum))
 	if err != nil {
 		return "", fmt.Errorf("cannot open image: %v", err)
 	}
