@@ -224,7 +224,7 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 	filePath := fmt.Sprintf("./data/files/%d.pdf", docId)
 	dest, err := os.Create(filePath)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(fmt.Sprintf("Failed to create file: \n%v", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -232,7 +232,13 @@ func (s *Server) UploadDocument(w http.ResponseWriter, r *http.Request) {
 
 	_, err = io.Copy(dest, file)
 	if err != nil {
-		log.Println(err.Error())
+		log.Println(fmt.Sprintf("Failed to populate file: \n%v", err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	err = pipeline.EnsureCorrectMime(filePath)
+	if err != nil {
+		log.Println(fmt.Sprintf("Failed to correctly encode file: \n%v", err))
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

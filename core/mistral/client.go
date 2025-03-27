@@ -84,7 +84,8 @@ func (c *Client) UploadFile(filePath string) (string, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("error from Mistral API: status code %d", resp.StatusCode)
+		responseBody, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("error from Mistral API: status code %d, response: %s", resp.StatusCode, string(responseBody))
 	}
 
 	var result struct {
