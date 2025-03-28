@@ -87,6 +87,15 @@ func (s *Server) LoadDocument(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if doc.Status == "PROCESSING" && time.Since(doc.UploadDate) > 10*time.Minute {
+		doc.Status = "FAILED"
+		err = db.UpdateDocumentStatus(docId, "FAILED")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
 	if r.Header.Get("hx-current-url") != "" && !strings.Contains(r.Header.Get("hx-current-url"), "document") {
 		data := struct {
 			Documents []models.Document

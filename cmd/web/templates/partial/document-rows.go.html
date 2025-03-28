@@ -1,12 +1,16 @@
 {{- /*gotype: struct { Documents []smart-docs/core/models.Document; Offset int; Search string }*/ -}}
 {{range $i, $doc := .Documents }}
-    <tr {{if eq $i (sub (len $.Documents) 1)}}
+    <tr {{if and (eq $i (sub (len $.Documents) 1)) (gt (len $.Documents) 1)}}
         hx-get="/?offset={{add $.Offset (len $.Documents)}}{{if ne $.Search ""}}{{printf "&search=%s" $.Search}}{{end}}"
         hx-trigger="revealed"
         hx-swap="afterend"
         {{end}}>
         <td>
-            <a href="/document/{{$doc.Id}}">{{$doc.Name}}</a>
+            {{if eq $doc.Status "FAILED"}}
+                <span style="color: #999">{{$doc.Name}} (FAILED)</span>
+            {{else}}
+                <a href="/document/{{$doc.Id}}">{{$doc.Name}}</a>
+            {{end}}
         </td>
         <td>
             {{$doc.UploadDate.Format "2006-01-02 15:04:05"}}
@@ -25,9 +29,15 @@
         </td>
         <td>
             <div style="display: flex; gap: 4px">
-                <a class="btn-icon" href="/document/{{$doc.Id}}/content" download="{{$doc.Name}}.html">
-                    <img src="/assets/icons/download.svg">
-                </a>
+                {{if ne $doc.Status "FAILED"}}
+                    <a class="btn-icon" href="/document/{{$doc.Id}}/content" download="{{$doc.Name}}.html">
+                        <img src="/assets/icons/download.svg">
+                    </a>
+                {{else}}
+                    <a class="btn-icon" style="opacity: 0.5" disabled>
+                        <img src="/assets/icons/download.svg">
+                    </a>
+                {{end}}
                 <a class="btn-icon"
                    hx-delete="/document/{{$doc.Id}}"
                    hx-confirm="Are you sure? You will loose all training data"
@@ -36,7 +46,7 @@
                     <img src="/assets/icons/trash.svg">
                 </a>
                 <a class="btn-icon {{if eq $doc.Status "PROCESSING"}}rotate{{end}}"
-                   {{if eq $doc.Status "DONE"}}
+                   {{if or (eq $doc.Status "DONE") (eq $doc.Status "FAILED")}}
                        hx-put="/document/{{$doc.Id}}/retry"
                    {{end}}
                    {{if eq $doc.Status "PROCESSING"}}
@@ -51,4 +61,4 @@
             </div>
         </td>
     </tr>
-{{end}} 
+{{end}}
